@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MLB Team Trader (US Rules & Tech Analysis)</title>
+    <title>ProTrader: MLB Edition (Direct Access)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
@@ -13,180 +13,191 @@
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
-        /* Custom Scrollbar */
-        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        /* Professional Dark Theme tweaks */
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Roboto Mono", "Segoe UI", Helvetica, Arial, sans-serif; 
+            background-color: #0b0e11; /* Deep Brokerage Black */
+        }
+        .font-mono-num { font-feature-settings: "tnum"; font-variant-numeric: tabular-nums; }
+        
+        /* Scrollbar - Slim & Dark */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
         ::-webkit-scrollbar-track { background: #111827; }
-        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 3px; }
+        ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
         
-        /* Animations */
-        .animate-pulse-slow { animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .fade-in { animation: fadeIn 0.3s ease-in-out; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        /* Utility for depth bars */
+        .depth-bar-bid { background: linear-gradient(90deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%); }
+        .depth-bar-ask { background: linear-gradient(90deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%); }
     </style>
 </head>
-<body class="bg-gray-950 text-gray-100 overflow-hidden selection:bg-blue-500 selection:text-white">
+<body class="text-gray-300 overflow-hidden selection:bg-blue-500/30 selection:text-blue-200">
 
     <div id="root"></div>
 
     <script type="text/babel">
         const { useState, useEffect, useRef, useCallback, useMemo } = React;
 
-        // --- API KEY (Optional for Gemini) ---
         const apiKey = ""; 
 
-        // --- ICONS ---
-        const IconBase = ({ children, className, size = 20 }) => (
-            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}>{children}</svg>
+        // --- ICONS (Lucide) ---
+        const Icon = ({ d, size=16, className, children }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className={className}>
+                {d && <path d={d}/>}
+                {children}
+            </svg>
         );
-        const TrendingUp = (p) => <IconBase {...p}><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline><polyline points="17 6 23 6 23 12"></polyline></IconBase>;
-        const TrendingDown = (p) => <IconBase {...p}><polyline points="23 18 13.5 8.5 8.5 13.5 1 6"></polyline><polyline points="17 18 23 18 23 12"></polyline></IconBase>;
-        const Clock = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></IconBase>;
-        const Activity = (p) => <IconBase {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></IconBase>;
-        const Search = (p) => <IconBase {...p}><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></IconBase>;
-        const XCircle = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></IconBase>;
-        const CheckCircle = (p) => <IconBase {...p}><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></IconBase>;
-        const AlertCircle = (p) => <IconBase {...p}><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></IconBase>;
-        const Trophy = (p) => <IconBase {...p}><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"></path><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"></path><path d="M4 22h16"></path><path d="M10 14.66V17"></path><path d="M14 14.66V17"></path><path d="M12 2v20"></path><path d="M12 2a7 7 0 0 0-7 7c0 8.1 11.4 12 11.4 12S19 17.1 19 9a7 7 0 0 0-7-7z"></path></IconBase>;
-        const Sparkles = (p) => <IconBase {...p}><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></IconBase>;
-        const LineChart = (p) => <IconBase {...p}><path d="M3 3v18h18"></path><path d="m19 9-5 5-4-4-3 3"></path></IconBase>;
-        const Send = (p) => <IconBase {...p}><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></IconBase>;
 
-        // --- LOGIC HELPERS (US RULES) ---
-        // US Market: Tick size is usually 0.01
-        const getTickSize = (price) => 0.01;
+        const Icons = {
+            Search: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
+            Chart: (p) => <Icon {...p} d="M3 3v18h18 M18 17V9 M13 17V5 M8 17v-3"/>,
+            List: (p) => <Icon {...p} d="M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01"/>,
+            Briefcase: (p) => <Icon {...p} d="M20 7h-3a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>,
+            X: (p) => <Icon {...p} d="M18 6L6 18 M6 6l12 12"/>,
+            Sparkles: (p) => <Icon {...p} d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>,
+            Send: (p) => <Icon {...p} d="M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z"/>,
+            Settings: (p) => (
+                <Icon {...p} d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V4a2 2 0 0 0-2-2z">
+                    <circle cx="12" cy="12" r="3"/>
+                </Icon>
+            ),
+            Wifi: (p) => <Icon {...p} d="M5 12.55a11 11 0 0 1 14.08 0 M1.42 9a16 16 0 0 1 21.16 0 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01"/>
+        };
 
-        // US Colors: Green = Up, Red = Down
-        const getColorClass = (val) => val > 0 ? 'text-green-500' : val < 0 ? 'text-red-500' : 'text-gray-400';
-        const getBgColorClass = (val) => val > 0 ? 'bg-green-500/10 text-green-500' : val < 0 ? 'bg-red-500/10 text-red-500' : 'bg-gray-700 text-gray-300';
-        const formatMoney = (num) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
-        const formatPercent = (num) => `${num > 0 ? '+' : ''}${num.toFixed(2)}%`;
-
-        // 30 MLB TEAMS (Mock Prices)
-        const INITIAL_STOCKS_DATA = [
-            { code: 'NYY', name: 'NY Yankees', refPrice: 158.20 },
-            { code: 'LAD', name: 'LA Dodgers', refPrice: 185.50 },
-            { code: 'BOS', name: 'Boston Red Sox', refPrice: 95.40 },
-            { code: 'ATL', name: 'Atlanta Braves', refPrice: 120.10 },
-            { code: 'HOU', name: 'Houston Astros', refPrice: 110.35 },
-            { code: 'PHI', name: 'Phila Phillies', refPrice: 105.80 },
-            { code: 'BAL', name: 'Baltimore Orioles', refPrice: 88.20 },
-            { code: 'CHC', name: 'Chi Cubs', refPrice: 75.60 },
-            { code: 'TOR', name: 'Toronto Blue Jays', refPrice: 65.40 },
-            { code: 'NYM', name: 'NY Mets', refPrice: 92.15 },
-            { code: 'SF', name: 'SF Giants', refPrice: 82.30 },
-            { code: 'SD', name: 'SD Padres', refPrice: 98.50 },
-            { code: 'TEX', name: 'Texas Rangers', refPrice: 78.90 },
-            { code: 'SEA', name: 'Seattle Mariners', refPrice: 68.45 },
-            { code: 'STL', name: 'St. Louis Cardinals', refPrice: 72.10 },
-            { code: 'TB', name: 'Tampa Bay Rays', refPrice: 55.30 },
-            { code: 'MIN', name: 'Minnesota Twins', refPrice: 48.90 },
-            { code: 'CLE', name: 'Cleveland Guardians', refPrice: 52.40 },
-            { code: 'MIL', name: 'Milwaukee Brewers', refPrice: 50.10 },
-            { code: 'ARI', name: 'Arizona D-backs', refPrice: 58.60 },
-            { code: 'MIA', name: 'Miami Marlins', refPrice: 25.30 },
-            { code: 'CIN', name: 'Cincinnati Reds', refPrice: 32.15 },
-            { code: 'DET', name: 'Detroit Tigers', refPrice: 28.90 },
-            { code: 'PIT', name: 'Pittsburgh Pirates', refPrice: 22.40 },
-            { code: 'WSH', name: 'Washington Nationals', refPrice: 35.60 },
-            { code: 'LAA', name: 'LA Angels', refPrice: 45.20 },
-            { code: 'KC', name: 'KC Royals', refPrice: 38.50 },
-            { code: 'COL', name: 'Colorado Rockies', refPrice: 29.80 },
-            { code: 'CWS', name: 'Chi White Sox', refPrice: 18.20 },
-            { code: 'OAK', name: 'Oakland Athletics', refPrice: 15.10 },
+        // --- CONSTANTS & HELPERS ---
+        const INITIAL_CASH = 100000.00;
+        const INITIAL_DATA = [
+            { c:'NYY', n:'NY Yankees', p:158.20 }, { c:'LAD', n:'LA Dodgers', p:185.50 },
+            { c:'BOS', n:'Boston Red Sox', p:95.40 }, { c:'ATL', n:'Atlanta Braves', p:120.10 },
+            { c:'HOU', n:'Houston Astros', p:110.35 }, { c:'PHI', n:'Phila Phillies', p:105.80 },
+            { c:'BAL', n:'Baltimore Orioles', p:88.20 }, { c:'CHC', n:'Chi Cubs', p:75.60 },
+            { c:'TOR', n:'Toronto Blue Jays', p:65.40 }, { c:'NYM', n:'NY Mets', p:92.15 },
+            { c:'SF', n:'SF Giants', p:82.30 }, { c:'SD', n:'SD Padres', p:98.50 },
+            { c:'TEX', n:'Texas Rangers', p:78.90 }, { c:'SEA', n:'Seattle Mariners', p:68.45 },
+            { c:'STL', n:'St. Louis Cardinals', p:72.10 }, { c:'TB', n:'Tampa Bay Rays', p:55.30 },
+            { c:'MIN', n:'Minnesota Twins', p:48.90 }, { c:'CLE', n:'Guardians', p:52.40 },
+            { c:'MIL', n:'Milwaukee Brewers', p:50.10 }, { c:'ARI', n:'Arizona D-backs', p:58.60 },
+            { c:'MIA', n:'Miami Marlins', p:25.30 }, { c:'CIN', n:'Cincinnati Reds', p:32.15 },
+            { c:'DET', n:'Detroit Tigers', p:28.90 }, { c:'PIT', n:'Pittsburgh Pirates', p:22.40 },
+            { c:'WSH', n:'Washington Nationals', p:35.60 }, { c:'LAA', n:'LA Angels', p:45.20 },
+            { c:'KC', n:'KC Royals', p:38.50 }, { c:'COL', n:'Colorado Rockies', p:29.80 },
+            { c:'CWS', n:'Chi White Sox', p:18.20 }, { c:'OAK', n:'Oakland Athletics', p:15.10 },
         ];
 
-        const INITIAL_STOCKS = INITIAL_STOCKS_DATA.map(s => ({
-            ...s,
-            price: s.refPrice,
-            volume: Math.floor(Math.random() * 500000) + 100000,
-            high: s.refPrice,
-            low: s.refPrice,
-            change: 0,
-            changePercent: 0,
-        }));
+        const fmtUSD = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n);
+        const fmtPct = (n) => `${n > 0 ? '+' : ''}${n.toFixed(2)}%`;
+        const col = (n) => n > 0 ? 'text-green-500' : n < 0 ? 'text-red-500' : 'text-gray-400';
 
-        // --- CHART COMPONENT ---
-        const StockChart = ({ stockCode, history }) => {
-            if (!history || history.length < 2) return (
-                <div className="h-full flex items-center justify-center text-gray-500 text-sm flex-col">
-                    <Activity size={48} className="mb-2 opacity-20" />
-                    <span>Waiting for market data...</span>
-                </div>
-            );
+        // --- CANDLESTICK CHART COMPONENT ---
+        const CandlestickChart = ({ data }) => {
+            const containerRef = useRef(null);
+            const [dims, setDims] = useState({ w: 0, h: 0 });
 
-            const data = history;
-            const width = 600;
-            const height = 300;
-            const padding = 20;
-
-            // Calculate scales
-            const minPrice = Math.min(...data.map(d => d.price)) * 0.995; // minimal padding
-            const maxPrice = Math.max(...data.map(d => d.price)) * 1.005;
-            const priceRange = maxPrice - minPrice || 1;
-
-            const getX = (index) => (index / (data.length - 1)) * (width - padding * 2) + padding;
-            const getY = (price) => height - padding - ((price - minPrice) / priceRange) * (height - padding * 2);
-
-            // Generate path for Line Chart
-            const points = data.map((d, i) => `${getX(i)},${getY(d.price)}`).join(' ');
-            
-            // Generate Moving Average (Simple 5-period MA)
-            let maPoints = "";
-            if (data.length >= 5) {
-                const maData = data.map((d, i, arr) => {
-                    if (i < 4) return null;
-                    const sum = arr.slice(i - 4, i + 1).reduce((acc, val) => acc + val.price, 0);
-                    return sum / 5;
+            // Use ResizeObserver to handle dynamic sizing issues
+            useEffect(() => {
+                if (!containerRef.current) return;
+                
+                const resizeObserver = new ResizeObserver(entries => {
+                    for (let entry of entries) {
+                        const { width, height } = entry.contentRect;
+                        if (width > 0 && height > 0) {
+                            setDims({ w: width, h: height });
+                        }
+                    }
                 });
-                maPoints = maData.map((val, i) => val ? `${getX(i)},${getY(val)}` : null).filter(p => p).join(' ');
-            }
+                
+                resizeObserver.observe(containerRef.current);
+                return () => resizeObserver.disconnect();
+            }, []);
 
-            const startPrice = data[0].price;
-            const endPrice = data[data.length - 1].price;
-            const trendColor = endPrice >= startPrice ? "#22c55e" : "#ef4444"; // Green or Red
+            if (!data || data.length < 2) return <div className="h-full flex items-center justify-center text-xs text-gray-600 animate-pulse">LOADING DATA...</div>;
+
+            const { w, h } = dims;
+            // If dimensions are still 0 (initial render), don't render chart content yet
+            if (w === 0 || h === 0) return <div ref={containerRef} className="w-full h-full" />;
+
+            const pT=20, pB=30, pR=50, pL=10;
+            const cW = w - pL - pR;
+            const cH = h - pT - pB;
+
+            // Visible window: Last 60 candles max
+            const visibleData = data.slice(-60);
+            const minP = Math.min(...visibleData.map(d => d.l)) * 0.999;
+            const maxP = Math.max(...visibleData.map(d => d.h)) * 1.001;
+            const range = maxP - minP || 1;
+            
+            const maxVol = Math.max(...visibleData.map(d => d.v)) || 1;
+
+            const getX = (i) => pL + (i / Math.max(visibleData.length - 1, 1)) * cW;
+            const getY = (p) => pT + cH - ((p - minP) / range) * cH;
+            
+            // Calculate MA5
+            const ma5 = visibleData.map((d, i, arr) => {
+                if(i < 4) return null;
+                const sum = arr.slice(i-4, i+1).reduce((a,b) => a + b.c, 0);
+                return sum/5;
+            });
 
             return (
-                <div className="w-full h-full relative select-none group">
-                    <svg viewBox={`0 0 ${width} ${height}`} className="w-full h-full overflow-visible">
-                        {/* Grid Lines */}
-                        <line x1={padding} y1={padding} x2={width-padding} y2={padding} stroke="#374151" strokeDasharray="4" opacity="0.3"/>
-                        <line x1={padding} y1={height-padding} x2={width-padding} y2={height-padding} stroke="#374151" strokeDasharray="4" opacity="0.3"/>
-                        <line x1={padding} y1={height/2} x2={width-padding} y2={height/2} stroke="#374151" strokeDasharray="4" opacity="0.1"/>
+                <div ref={containerRef} className="w-full h-full relative select-none">
+                    <svg width={w} height={h} className="overflow-visible">
+                        {/* Grid & Prices (Y-Axis) */}
+                        {[0, 0.25, 0.5, 0.75, 1].map(tick => {
+                            const p = minP + range * tick;
+                            const y = getY(p);
+                            return (
+                                <g key={tick}>
+                                    <line x1={pL} y1={y} x2={w-pR} y2={y} stroke="#1f2937" strokeDasharray="2"/>
+                                    <text x={w} y={y} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="middle" className="font-mono-num">{p.toFixed(2)}</text>
+                                </g>
+                            );
+                        })}
 
-                        {/* Price Line */}
+                        {/* Candles */}
+                        {visibleData.map((d, i) => {
+                            const x = getX(i);
+                            const barW = Math.max(1, (cW / visibleData.length) * 0.7);
+                            const isUp = d.c >= d.o;
+                            const color = isUp ? "#22c55e" : "#ef4444";
+                            const yHigh = getY(d.h);
+                            const yLow = getY(d.l);
+                            const yOpen = getY(d.o);
+                            const yClose = getY(d.c);
+                            
+                            // Volume Bar
+                            const volH = (d.v / maxVol) * (cH * 0.3); // Max 30% height
+                            
+                            return (
+                                <g key={i}>
+                                    {/* Volume */}
+                                    <rect x={x - barW/2} y={h - pB - volH} width={barW} height={volH} fill={color} opacity="0.2" />
+                                    {/* Wick */}
+                                    <line x1={x} y1={yHigh} x2={x} y2={yLow} stroke={color} strokeWidth="1" />
+                                    {/* Body */}
+                                    <rect 
+                                        x={x - barW/2} 
+                                        y={Math.min(yOpen, yClose)} 
+                                        width={barW} 
+                                        height={Math.max(Math.abs(yOpen - yClose), 1)} 
+                                        fill={color} 
+                                    />
+                                </g>
+                            )
+                        })}
+
+                        {/* MA5 Line */}
                         <polyline 
-                            points={points} 
-                            fill="none" 
-                            stroke={trendColor} 
-                            strokeWidth="2" 
-                            strokeLinejoin="round"
-                            className="drop-shadow-md"
+                            points={ma5.map((v, i) => v ? `${getX(i)},${getY(v)}` : null).filter(x=>x).join(' ')}
+                            fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.8"
                         />
-
-                        {/* MA Line */}
-                        {maPoints && (
-                            <polyline 
-                                points={maPoints} 
-                                fill="none" 
-                                stroke="#fbbf24" 
-                                strokeWidth="1.5" 
-                                strokeOpacity="0.7"
-                                strokeDasharray="4"
-                            />
-                        )}
-
-                        {/* Hover Effect (Last Point) */}
-                        <circle cx={getX(data.length-1)} cy={getY(endPrice)} r="4" fill={trendColor} className="animate-pulse" />
+                        
+                        {/* Current Price Indicator */}
+                        <line x1={pL} y1={getY(visibleData[visibleData.length-1].c)} x2={w-pR} y2={getY(visibleData[visibleData.length-1].c)} stroke="#3b82f6" strokeWidth="1" strokeDasharray="4" opacity="0.5"/>
                     </svg>
-                    
-                    {/* Current Price Badge */}
-                    <div className="absolute top-2 right-2 bg-gray-800/80 px-2 py-1 rounded border border-gray-700 text-xs font-mono text-white">
-                        Last: <span style={{color: trendColor}}>{endPrice.toFixed(2)}</span>
-                    </div>
-                    <div className="absolute top-8 right-2 flex items-center text-[10px] text-yellow-400">
-                        <div className="w-3 h-0.5 bg-yellow-400 mr-1 border-dashed border-t border-yellow-400"></div> MA(5)
+                    {/* Labels */}
+                    <div className="absolute top-2 left-2 flex gap-4 text-[10px] font-mono text-gray-500">
+                        <span className="text-yellow-500">MA(5)</span>
+                        <span>VOL</span>
                     </div>
                 </div>
             );
@@ -194,531 +205,477 @@
 
         // --- MAIN APP ---
         function App() {
-            const [currentTime, setCurrentTime] = useState(new Date());
-            const [marketOpen, setMarketOpen] = useState(true);
-            const [stocks, setStocks] = useState(INITIAL_STOCKS);
-            const [selectedStockCode, setSelectedStockCode] = useState('NYY');
-            const [searchTerm, setSearchTerm] = useState('');
-            const [activeTab, setActiveTab] = useState('TRADE'); // 'TRADE' or 'CHART'
-            
-            // Historical Data for Charts: { Code: [{time, price}] }
-            const [priceHistory, setPriceHistory] = useState({});
-
-            const [account, setAccount] = useState({
-                cash: 100000.00, // USD 100k
-                totalAssets: 100000.00,
-                realizedPL: 0,
-            });
-            const [positions, setPositions] = useState([]);
+            // State
+            const [time, setTime] = useState(new Date());
+            const [stocks, setStocks] = useState(INITIAL_DATA.map(s => ({ ...s, price: s.p, high: s.p, low: s.p, open: s.p, vol: 0, change: 0, pct: 0 })));
+            const [selCode, setSelCode] = useState('NYY');
+            const [history, setHistory] = useState({}); // { CODE: [{o,h,l,c,v,time}] }
+            const [account, setAccount] = useState({ cash: INITIAL_CASH, equity: INITIAL_CASH, realized: 0 });
+            const [pos, setPos] = useState([]);
             const [orders, setOrders] = useState([]);
+            const [aiOpen, setAiOpen] = useState(false);
             
-            // Order Form
-            const [orderSide, setOrderSide] = useState('BUY');
-            const [orderType, setOrderType] = useState('LIMIT');
-            const [orderCondition, setOrderCondition] = useState('DAY'); // US Day Order
-            const [orderPrice, setOrderPrice] = useState('');
-            const [orderQty, setOrderQty] = useState('100'); // Default 100 shares
-            const [notification, setNotification] = useState(null);
-            
-            // AI Modal
-            const [isAnalystOpen, setIsAnalystOpen] = useState(false);
+            // Order Entry State
+            const [order, setOrder] = useState({ side: 'BUY', type: 'LIMIT', tif: 'DAY', qty: '', price: '' });
+            const [msg, setMsg] = useState(null);
 
-            // --- MARKET ENGINE ---
+            // --- ENGINE: TICK & CANDLE GENERATION ---
             useEffect(() => {
-                // Initialize history
-                const initialHistory = {};
-                INITIAL_STOCKS.forEach(s => {
-                    // Generate fake past 20 points
-                    const hist = [];
-                    let p = s.refPrice;
-                    for(let i=0; i<20; i++) {
-                        p = p * (1 + (Math.random() - 0.5) * 0.01);
-                        hist.push({ time: Date.now() - (20-i)*2000, price: p });
+                // Init History
+                const initHist = {};
+                stocks.forEach(s => {
+                    // Generate dummy history
+                    const arr = [];
+                    let p = s.p;
+                    for(let i=0; i<100; i++) {
+                        let o = p;
+                        let c = o * (1 + (Math.random()-0.5)*0.004);
+                        let h = Math.max(o, c) * (1 + Math.random()*0.001);
+                        let l = Math.min(o, c) * (1 - Math.random()*0.001);
+                        arr.push({ o, h, l, c, v: Math.floor(Math.random()*1000), time: Date.now()-i*60000 });
+                        p = c;
                     }
-                    initialHistory[s.code] = hist;
+                    initHist[s.c] = arr.reverse();
                 });
-                setPriceHistory(initialHistory);
+                setHistory(initHist);
 
-                const timer = setInterval(() => {
-                    setCurrentTime(new Date());
+                const interval = setInterval(() => {
+                    setTime(new Date());
                     
-                    if (marketOpen) {
-                        setStocks(prevStocks => {
-                            const nextStocks = prevStocks.map(stock => {
-                                if (Math.random() > 0.5) { 
-                                    const direction = Math.random() > 0.5 ? 1 : -1;
-                                    // US Volatility
-                                    const movePercent = (Math.random() * 0.005) * direction; // 0.5% max move per tick
-                                    let newPrice = stock.price * (1 + movePercent);
-                                    newPrice = Math.round(newPrice * 100) / 100; // Round to penny
-                                    
-                                    const newHigh = Math.max(stock.high, newPrice);
-                                    const newLow = Math.min(stock.low, newPrice);
-                                    const newChange = newPrice - stock.refPrice;
-                                    const newChangePercent = (newChange / stock.refPrice) * 100;
-                                    const volAdd = Math.floor(Math.random() * 500); 
-
-                                    return {
-                                        ...stock,
-                                        price: newPrice,
-                                        high: newHigh,
-                                        low: newLow,
-                                        change: newChange,
-                                        changePercent: newChangePercent,
-                                        volume: stock.volume + volAdd
-                                    };
-                                }
-                                return stock;
-                            });
-
-                            // Update History for ALL stocks (for chart data)
-                            setPriceHistory(prevHist => {
-                                const newHist = { ...prevHist };
-                                nextStocks.forEach(s => {
-                                    if(!newHist[s.code]) newHist[s.code] = [];
-                                    newHist[s.code] = [...newHist[s.code], { time: Date.now(), price: s.price }].slice(-50); // Keep last 50 points
-                                });
-                                return newHist;
-                            });
-
-                            return nextStocks;
+                    // Market Simulation
+                    setStocks(prev => {
+                        const updated = prev.map(s => {
+                            if(Math.random() > 0.3) { // 70% chance to tick
+                                const move = (Math.random() - 0.5) * 0.05; // volatility
+                                let np = s.price + move;
+                                np = Math.round(np * 100) / 100;
+                                return {
+                                    ...s,
+                                    price: np,
+                                    high: Math.max(s.high, np),
+                                    low: Math.min(s.low, np),
+                                    vol: s.vol + Math.floor(Math.random() * 50),
+                                    change: np - s.p, // s.p is ref price (prev close)
+                                    pct: (np - s.p)/s.p * 100
+                                };
+                            }
+                            return s;
                         });
-                    }
-                }, 1000); // Fast tick for excitement
 
-                return () => clearInterval(timer);
-            }, [marketOpen]);
+                        // Update Candle History (Real-time accumulation simulation)
+                        setHistory(prevH => {
+                            const newH = { ...prevH };
+                            updated.forEach(s => {
+                                if(!newH[s.c]) return;
+                                const last = newH[s.c][newH[s.c].length - 1];
+                                // Simple logic: update last candle or create new every 3 seconds for demo speed
+                                if (Date.now() - last.time < 3000) {
+                                    last.c = s.price;
+                                    last.h = Math.max(last.h, s.price);
+                                    last.l = Math.min(last.l, s.price);
+                                    last.v += (s.vol - (updated.find(u=>u.c===s.c)?.oldVol || s.vol)); // approx delta
+                                } else {
+                                    newH[s.c] = [...newH[s.c], { o: s.price, h: s.price, l: s.price, c: s.price, v: 0, time: Date.now() }].slice(-100);
+                                }
+                            });
+                            return newH;
+                        });
+                        return updated;
+                    });
+                }, 1000);
+                return () => clearInterval(interval);
+            }, []);
 
             // --- MATCHING ENGINE ---
             useEffect(() => {
-                if (!marketOpen) return;
-                setOrders(prevOrders => {
-                    let hasUpdates = false;
-                    const updatedOrders = prevOrders.map(order => {
-                        if (order.status !== 'PENDING') return order;
-                        const currentStock = stocks.find(s => s.code === order.code);
-                        if (!currentStock) return order;
-
-                        let isMatch = false;
-                        if (order.side === 'BUY' && order.type === 'LIMIT' && currentStock.price <= order.price) isMatch = true;
-                        if (order.side === 'SELL' && order.type === 'LIMIT' && currentStock.price >= order.price) isMatch = true;
-
-                        if (isMatch) {
-                            hasUpdates = true;
-                            executeTrade(order, currentStock.price, order.quantity);
-                            return { ...order, status: 'FILLED', filledQuantity: order.quantity, averageFillPrice: currentStock.price };
+                setOrders(prev => {
+                    let dirty = false;
+                    const next = prev.map(o => {
+                        if(o.status !== 'PENDING') return o;
+                        const s = stocks.find(x => x.c === o.code);
+                        if(!s) return o;
+                        
+                        // Check fill
+                        const fill = (o.side === 'BUY' && s.price <= o.price) || (o.side === 'SELL' && s.price >= o.price);
+                        if (fill || o.type === 'MARKET') {
+                            dirty = true;
+                            executeTrade(o, s.price);
+                            return { ...o, status: 'FILLED', fillPrice: s.price };
                         }
-                        return order;
+                        return o;
                     });
-                    return hasUpdates ? updatedOrders : prevOrders;
+                    return dirty ? next : prev;
                 });
-            }, [stocks, marketOpen]);
+            }, [stocks]);
 
-            // --- PORTFOLIO UPDATE ---
+            // --- P/L CALC ---
             useEffect(() => {
-                setPositions(prev => prev.map(pos => {
-                    const stock = stocks.find(s => s.code === pos.code);
-                    if (!stock) return pos;
-                    const marketValue = Math.abs(pos.quantity) * stock.price;
-                    let unrealizedPL = 0;
-                    if (pos.quantity > 0) unrealizedPL = (stock.price - pos.averageCost) * pos.quantity;
-                    else unrealizedPL = (pos.averageCost - stock.price) * Math.abs(pos.quantity);
-                    
-                    const costBasis = Math.abs(pos.quantity) * pos.averageCost;
-                    const unrealizedPLPercent = costBasis === 0 ? 0 : (unrealizedPL / costBasis) * 100;
-                    return { ...pos, currentPrice: stock.price, marketValue, unrealizedPL, unrealizedPLPercent };
+                setPos(prev => prev.map(p => {
+                    const s = stocks.find(x => x.c === p.code);
+                    if(!s) return p;
+                    const mkt = Math.abs(p.qty) * s.price;
+                    const upl = p.qty > 0 ? (s.price - p.avg) * p.qty : (p.avg - s.price) * Math.abs(p.qty);
+                    return { ...p, mark: s.price, mktVal: mkt, upl, uplPct: (upl/(p.avg*Math.abs(p.qty)))*100 };
                 }));
             }, [stocks]);
 
             useEffect(() => {
-                const totalUnrealized = positions.reduce((acc, p) => acc + p.unrealizedPL, 0);
-                // Net Liq = Cash + Realized + Unrealized (Simple model)
-                setAccount(prev => ({ ...prev, totalAssets: 100000 + prev.realizedPL + totalUnrealized }));
-            }, [positions, account.realizedPL]);
+                const uplTotal = pos.reduce((a,b) => a + b.upl, 0);
+                setAccount(a => ({ ...a, equity: a.cash + uplTotal + pos.reduce((acc,p) => acc + (p.qty > 0 ? p.mktVal : 0), 0) })); // Simplified Equity
+            }, [pos, account.cash]);
 
-            const executeTrade = (order, fillPrice, fillQty) => {
-                const tradeAmount = fillPrice * fillQty;
-                const commission = Math.max(1, fillQty * 0.005); // US style commission, min $1
+            // --- ACTIONS ---
+            const executeTrade = (ord, price) => {
+                const qty = parseInt(ord.qty);
+                const amt = price * qty;
+                const comm = Math.max(1, qty * 0.005); // Commission
                 
-                setPositions(prev => {
-                    const existing = prev.find(p => p.code === order.code);
-                    if (!existing) {
-                        const signedQty = order.side === 'BUY' ? fillQty : -fillQty;
-                        return [...prev, {
-                            code: order.code, name: order.name, quantity: signedQty, averageCost: fillPrice,
-                            currentPrice: fillPrice, marketValue: tradeAmount, unrealizedPL: -commission, unrealizedPLPercent: 0
-                        }];
+                setPos(prev => {
+                    const ex = prev.find(p => p.code === ord.code);
+                    if(!ex) {
+                        return [...prev, { code: ord.code, qty: ord.side==='BUY'?qty:-qty, avg: price, mark: price, mktVal: amt, upl: -comm, uplPct: 0 }];
                     } else {
-                        // Simplify logic: Averaging
-                        let newQty = existing.quantity + (order.side === 'BUY' ? fillQty : -fillQty);
-                        if (Math.abs(newQty) < 0.001) return prev.filter(p => p.code !== order.code);
-                        return prev.map(p => p.code === order.code ? { ...p, quantity: newQty } : p);
+                        const newQty = ex.qty + (ord.side==='BUY'?qty:-qty);
+                        if (newQty === 0) return prev.filter(p => p.code !== ord.code);
+                        // Weighted Avg Cost logic skipped for brevity, using last price for simplicity in this demo
+                        return prev.map(p => p.code === ord.code ? { ...p, qty: newQty } : p);
                     }
                 });
-
-                setAccount(prev => {
-                    // Simply deduct commission and P/L realization would happen on close
-                    // For this mock, just tracking cash flow roughly
-                    let cashChange = order.side === 'BUY' ? -tradeAmount : tradeAmount;
-                    return { ...prev, cash: prev.cash + cashChange - commission };
-                });
-                showNotification(`Filled ${order.side} ${fillQty} ${order.code} @ ${fillPrice}`, 'success');
+                setAccount(a => ({ ...a, cash: a.cash + (ord.side==='BUY' ? -amt : amt) - comm }));
+                notify(`FILLED: ${ord.side} ${qty} ${ord.code} @ ${price}`);
             };
 
-            const handleSubmitOrder = (e) => {
+            const placeOrder = (e) => {
                 e.preventDefault();
-                const stock = stocks.find(s => s.code === selectedStockCode);
-                if (!stock) return;
-                const price = orderType === 'MARKET' ? stock.price : parseFloat(orderPrice);
-                const qty = parseInt(orderQty);
+                const s = stocks.find(x => x.c === selCode);
+                const price = order.type === 'MARKET' ? s.price : parseFloat(order.price);
+                const qty = parseInt(order.qty);
                 
-                if (!qty || qty <= 0) return showNotification('Invalid Quantity', 'error');
-                if (orderType === 'LIMIT' && (!price || price <= 0)) return showNotification('Invalid Price', 'error');
+                if(!qty || qty <= 0) return notify("Invalid Qty", "error");
+                if(order.type==='LIMIT' && !price) return notify("Invalid Price", "error");
 
-                const newOrder = {
-                    id: Math.random().toString(36).substr(2, 9),
+                // Buying Power Check
+                if (order.side === 'BUY' && (price * qty) > account.cash) return notify("Insufficient Buying Power", "error");
+
+                const newOrd = {
+                    id: Math.random().toString(36).substr(2,9),
                     time: new Date().toLocaleTimeString(),
-                    code: stock.code, name: stock.name, side: orderSide, type: orderType, condition: orderCondition,
-                    price: price, quantity: qty, filledQuantity: 0, status: 'PENDING', averageFillPrice: 0
+                    code: selCode,
+                    ...order,
+                    price,
+                    status: 'PENDING',
+                    fillPrice: 0
                 };
 
-                const canFill = orderType === 'MARKET' || (orderSide === 'BUY' ? stock.price <= price : stock.price >= price);
-
-                if ((orderCondition === 'IOC' || orderCondition === 'FOK') && !canFill) {
-                    showNotification(`${orderCondition} Order Cancelled`, 'info');
-                } else if (canFill && orderType === 'MARKET') {
-                    executeTrade(newOrder, stock.price, qty);
+                // Immediate check for Market or matching Limit
+                const fill = order.type === 'MARKET' || (order.side==='BUY' && s.price <= price) || (order.side==='SELL' && s.price >= price);
+                
+                if ((order.tif === 'IOC' || order.tif === 'FOK') && !fill) {
+                    notify("Order Cancelled (No Liquidity)", "info");
+                } else if (fill && order.type === 'MARKET') {
+                    executeTrade(newOrd, s.price);
                 } else {
-                    setOrders(prev => [newOrder, ...prev]);
-                    showNotification('Order Submitted', 'success');
+                    setOrders([newOrd, ...orders]);
+                    notify("Order Submitted");
                 }
             };
 
-            const showNotification = (msg, type) => {
-                setNotification({ msg, type });
-                setTimeout(() => setNotification(null), 3000);
+            const cancelOrder = (id) => {
+                setOrders(prev => prev.map(o => o.id === id && o.status === 'PENDING' ? { ...o, status: 'CXLD' } : o));
+                notify("Order Cancelled");
             };
 
-            const selectedStock = stocks.find(s => s.code === selectedStockCode) || stocks[0];
-            const currentPos = positions.find(p => p.code === selectedStockCode);
-            const filteredStocks = stocks.filter(s => s.code.includes(searchTerm.toUpperCase()) || s.name.toLowerCase().includes(searchTerm.toLowerCase()));
+            const notify = (msg, type='success') => {
+                setMsg({ txt: msg, type });
+                setTimeout(() => setMsg(null), 3000);
+            };
 
-            // --- AI ANALYST LOGIC (Placeholder) ---
-            const AIAnalystModal = ({ isOpen, onClose }) => {
-                if (!isOpen) return null;
+            // --- DERIVED ---
+            const selStock = stocks.find(s => s.c === selCode) || stocks[0];
+            const activeOrders = orders.filter(o => o.status === 'PENDING');
+            const currentPos = pos.find(p => p.code === selCode);
+
+            // Smart Qty Helper
+            const setQtyByPct = (pct) => {
+                const s = stocks.find(x => x.c === selCode);
+                const p = order.price || s.price;
+                const max = Math.floor(account.cash / p);
+                setOrder(prev => ({ ...prev, qty: Math.floor(max * pct) }));
+            };
+
+            // Simulated Depth
+            const DepthRow = ({ price, size, type }) => {
+                const w = Math.min((size / 1000) * 100, 100);
                 return (
-                    <div className="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-                        <div className="bg-gray-900 w-full max-w-md rounded-xl border border-gray-700 p-6 relative">
-                            <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white"><XCircle/></button>
-                            <h2 className="text-xl font-bold mb-4 flex items-center gap-2 text-purple-400"><Sparkles/> AI Analyst</h2>
-                            <div className="h-64 bg-gray-800 rounded p-4 overflow-y-auto text-sm text-gray-300 space-y-3">
-                                <div className="bg-purple-900/20 p-3 rounded-lg border border-purple-500/30">
-                                    <p className="font-bold text-purple-300 mb-1">Analysis for {selectedStock.code}:</p>
-                                    <p>Based on current simulated volatility, {selectedStock.name} shows strong momentum. (This is a mock AI response for demo purposes).</p>
-                                </div>
-                            </div>
-                            <div className="mt-4 flex gap-2">
-                                <input type="text" placeholder="Ask a question..." className="flex-1 bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:outline-none focus:border-purple-500"/>
-                                <button className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded"><Send size={16}/></button>
-                            </div>
-                        </div>
+                    <div className="flex justify-between text-xs font-mono relative py-0.5 px-1 hover:bg-gray-800 cursor-pointer" onClick={() => setOrder(p => ({...p, price: price.toFixed(2), type: 'LIMIT'}))}>
+                        <div className={`absolute top-0 bottom-0 opacity-20 ${type==='bid'?'right-1/2 bg-green-500 origin-right':'left-1/2 bg-red-500 origin-left'}`} style={{width: `${w}%`}}></div>
+                        <span className="w-1/2 text-right pr-2 text-gray-400">{type==='bid'?size:price.toFixed(2)}</span>
+                        <span className={`w-1/2 pl-2 ${type==='bid'?'text-green-400':'text-gray-400'}`}>{type==='bid'?price.toFixed(2):size}</span>
                     </div>
                 );
             };
 
             return (
-                <div className="flex flex-col h-screen bg-gray-950 text-gray-200 font-sans overflow-hidden">
-                    {/* HEADER */}
-                    <header className="h-14 bg-gray-900 border-b border-gray-800 flex items-center justify-between px-4 shrink-0 z-20">
-                        <div className="flex items-center gap-2">
-                            <div className="bg-blue-600 p-1.5 rounded text-white"><Trophy size={18}/></div>
-                            <h1 className="font-bold text-lg tracking-tight hidden sm:block">MLB Trader <span className="text-gray-500 font-normal text-xs">US Market</span></h1>
+                <div className="flex flex-col h-screen text-xs md:text-sm font-sans">
+                    {/* --- HEADER: ACCOUNT SUMMARY --- */}
+                    <header className="bg-gray-900 border-b border-gray-800 h-10 flex items-center justify-between px-3 shrink-0">
+                        <div className="flex items-center gap-3">
+                            <Icons.Settings className="text-blue-500"/>
+                            <span className="font-bold text-gray-100 tracking-wide">PRO<span className="text-blue-500">TRADER</span> <span className="text-gray-600 text-[10px]">MLB DMA</span></span>
                         </div>
-                        <div className="flex items-center gap-4 text-sm font-mono text-gray-400">
-                            <div className={`flex items-center gap-1 ${marketOpen ? 'text-green-400' : 'text-red-400'}`}>
-                                <div className={`w-2 h-2 rounded-full ${marketOpen ? 'bg-green-400 animate-pulse' : 'bg-red-400'}`}></div>
-                                {marketOpen ? 'MARKET OPEN' : 'CLOSED'}
+                        <div className="flex gap-6 font-mono-num text-xs">
+                            <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
+                                <span className="text-gray-500 uppercase text-[10px]">Net Liq</span>
+                                <span className="font-bold text-gray-200">{fmtUSD(account.equity)}</span>
                             </div>
-                            <div className="hidden md:block">{currentTime.toLocaleTimeString()}</div>
+                            <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
+                                <span className="text-gray-500 uppercase text-[10px]">Day P/L</span>
+                                <span className={`font-bold ${col(account.equity - INITIAL_CASH)}`}>{fmtUSD(account.equity - INITIAL_CASH)}</span>
+                            </div>
+                            <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
+                                <span className="text-gray-500 uppercase text-[10px]">Buying Power</span>
+                                <span className="font-bold text-blue-400">{fmtUSD(account.cash)}</span>
+                            </div>
+                        </div>
+                        <div className="flex items-center gap-2 text-[10px] text-gray-500">
+                            <Icons.Wifi className="text-green-500" size={12}/>
+                            <span>Connected</span>
+                            <span className="font-mono text-gray-400">{time.toLocaleTimeString()}</span>
                         </div>
                     </header>
 
-                    {/* MAIN LAYOUT */}
-                    <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+                    {/* --- MAIN DASHBOARD --- */}
+                    <div className="flex-1 flex overflow-hidden bg-[#0b0e11]">
                         
-                        {/* LEFT SIDEBAR: MARKET LIST (Scrollable) */}
-                        <aside className="w-full md:w-72 bg-gray-900 border-b md:border-b-0 md:border-r border-gray-800 flex flex-col shrink-0 h-1/3 md:h-full">
-                            <div className="p-3 border-b border-gray-800">
+                        {/* 1. WATCHLIST (Left) */}
+                        <div className="w-60 flex flex-col border-r border-gray-800 bg-gray-900/50">
+                            <div className="p-2 border-b border-gray-800">
                                 <div className="relative">
-                                    <Search className="absolute left-3 top-2.5 text-gray-500" size={14}/>
-                                    <input 
-                                        type="text" 
-                                        placeholder="Symbol / Team" 
-                                        value={searchTerm}
-                                        onChange={e => setSearchTerm(e.target.value)}
-                                        className="w-full bg-gray-800 text-gray-200 pl-9 pr-3 py-2 rounded text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder-gray-600"
-                                    />
+                                    <Icons.Search className="absolute left-2 top-2 text-gray-500"/>
+                                    <input className="w-full bg-gray-950 border border-gray-700 rounded py-1 pl-7 pr-2 text-xs text-gray-300 focus:border-blue-500 outline-none" placeholder="Symbol" />
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto">
-                                {filteredStocks.map(stock => (
-                                    <div 
-                                        key={stock.code}
-                                        onClick={() => setSelectedStockCode(stock.code)}
-                                        className={`p-3 flex justify-between items-center cursor-pointer border-b border-gray-800/50 hover:bg-gray-800 transition-colors ${selectedStockCode === stock.code ? 'bg-blue-900/20 border-l-2 border-blue-500' : 'border-l-2 border-transparent'}`}
-                                    >
-                                        <div>
-                                            <div className="font-bold text-sm text-white">{stock.code}</div>
-                                            <div className="text-xs text-gray-500 truncate w-24">{stock.name}</div>
+                                {stocks.map(s => (
+                                    <div key={s.c} onClick={() => setSelCode(s.c)} className={`px-3 py-2 border-b border-gray-800/50 cursor-pointer hover:bg-gray-800 group ${selCode===s.c ? 'bg-blue-900/20 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent'}`}>
+                                        <div className="flex justify-between items-center">
+                                            <span className="font-bold text-gray-200">{s.c}</span>
+                                            <span className={`font-mono-num ${col(s.change)}`}>{s.price.toFixed(2)}</span>
                                         </div>
-                                        <div className="text-right">
-                                            <div className={`text-sm font-mono font-medium ${getColorClass(stock.change)}`}>{stock.price.toFixed(2)}</div>
-                                            <div className={`text-xs ${getColorClass(stock.change)}`}>{formatPercent(stock.changePercent)}</div>
+                                        <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
+                                            <span className="truncate w-20">{s.n}</span>
+                                            <span className={`${col(s.change)} group-hover:text-white`}>{fmtPct(s.pct)}</span>
                                         </div>
                                     </div>
                                 ))}
                             </div>
-                        </aside>
+                        </div>
 
-                        {/* CENTER: WORKSPACE */}
-                        <main className="flex-1 flex flex-col overflow-hidden bg-gray-950 relative">
-                            
-                            {/* STOCK HEADER */}
-                            <div className="p-4 md:p-6 border-b border-gray-800 flex justify-between items-end bg-gray-900/50 shrink-0">
+                        {/* 2. CHART & DOM (Center) */}
+                        <div className="flex-1 flex flex-col min-w-0 border-r border-gray-800">
+                            {/* Chart Header */}
+                            <div className="h-12 border-b border-gray-800 flex justify-between items-center px-4 bg-gray-900/30">
                                 <div>
-                                    <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                                        {selectedStock.code} 
-                                        <span className="text-base font-normal text-gray-500">{selectedStock.name}</span>
-                                    </h2>
-                                    <div className="flex items-baseline gap-3 mt-1">
-                                        <span className={`text-4xl font-mono font-bold tracking-tighter ${getColorClass(selectedStock.change)}`}>
-                                            {selectedStock.price.toFixed(2)}
-                                        </span>
-                                        <span className={`flex items-center text-lg font-medium ${getColorClass(selectedStock.change)}`}>
-                                            {selectedStock.change > 0 ? <TrendingUp size={20} className="mr-1"/> : <TrendingDown size={20} className="mr-1"/>}
-                                            {selectedStock.change > 0 ? '+' : ''}{selectedStock.change.toFixed(2)} ({formatPercent(selectedStock.changePercent)})
-                                        </span>
-                                    </div>
+                                    <span className="text-xl font-bold text-white mr-2">{selStock.c}</span>
+                                    <span className="text-xs text-gray-500 mr-4">{selStock.n}</span>
+                                    <span className={`text-lg font-mono-num font-bold ${col(selStock.change)}`}>{selStock.price.toFixed(2)}</span>
+                                    <span className={`ml-2 text-xs font-mono-num ${col(selStock.change)}`}>{fmtPct(selStock.pct)}</span>
                                 </div>
-                                <div className="hidden sm:block text-right text-sm text-gray-400 font-mono">
-                                    <div>VOL: <span className="text-gray-200">{selectedStock.volume.toLocaleString()}</span></div>
-                                    <div>HIGH: <span className="text-gray-200">{selectedStock.high.toFixed(2)}</span></div>
-                                    <div>LOW: <span className="text-gray-200">{selectedStock.low.toFixed(2)}</span></div>
+                                <div className="flex gap-4 text-xs font-mono text-gray-500">
+                                    <div>H: <span className="text-gray-300">{selStock.high.toFixed(2)}</span></div>
+                                    <div>L: <span className="text-gray-300">{selStock.low.toFixed(2)}</span></div>
+                                    <div>V: <span className="text-gray-300">{selStock.vol.toLocaleString()}</span></div>
                                 </div>
                             </div>
-
-                            {/* TAB NAVIGATION */}
-                            <div className="flex border-b border-gray-800 bg-gray-900/30 shrink-0">
-                                <button 
-                                    onClick={() => setActiveTab('TRADE')}
-                                    className={`px-6 py-3 text-sm font-bold transition-colors ${activeTab === 'TRADE' ? 'text-blue-400 border-b-2 border-blue-400 bg-blue-500/5' : 'text-gray-500 hover:text-gray-300'}`}
-                                >
-                                    Trading
-                                </button>
-                                <button 
-                                    onClick={() => setActiveTab('CHART')}
-                                    className={`px-6 py-3 text-sm font-bold transition-colors flex items-center gap-2 ${activeTab === 'CHART' ? 'text-purple-400 border-b-2 border-purple-400 bg-purple-500/5' : 'text-gray-500 hover:text-gray-300'}`}
-                                >
-                                    <LineChart size={16}/> Technical Analysis
-                                </button>
+                            
+                            {/* Chart Container */}
+                            <div className="flex-1 relative bg-[#0b0e11]">
+                                <CandlestickChart data={history[selCode]} />
                             </div>
 
-                            {/* SCROLLABLE CONTENT AREA */}
-                            <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                                
-                                {/* TRADE TAB CONTENT */}
-                                {activeTab === 'TRADE' && (
-                                    <div className="flex flex-col lg:flex-row gap-6 max-w-6xl mx-auto">
-                                        {/* ORDER ENTRY FORM */}
-                                        <div className="w-full lg:w-1/2 bg-gray-900 rounded-xl border border-gray-800 p-5 shadow-lg h-fit">
-                                            <div className="flex justify-between items-center mb-4">
-                                                <h3 className="font-bold text-gray-200 flex items-center gap-2"><Activity size={18}/> Order Entry</h3>
-                                                <div className="text-xs bg-gray-800 px-2 py-1 rounded border border-gray-700">
-                                                    {currentPos ? (
-                                                        <span className={currentPos.quantity > 0 ? "text-green-400" : "text-red-400"}>
-                                                            POS: {currentPos.quantity > 0 ? "+" : ""}{currentPos.quantity}
-                                                        </span>
-                                                    ) : <span className="text-gray-500">POS: 0</span>}
-                                                </div>
-                                            </div>
-
-                                            <form onSubmit={handleSubmitOrder} className="space-y-4">
-                                                <div className="flex bg-gray-800 p-1 rounded-lg">
-                                                    <button type="button" onClick={() => setOrderSide('BUY')} className={`flex-1 py-2 rounded-md text-sm font-bold transition ${orderSide === 'BUY' ? 'bg-green-600 text-white shadow' : 'text-gray-400 hover:text-gray-200'}`}>Buy</button>
-                                                    <button type="button" onClick={() => setOrderSide('SELL')} className={`flex-1 py-2 rounded-md text-sm font-bold transition ${orderSide === 'SELL' ? 'bg-red-600 text-white shadow' : 'text-gray-400 hover:text-gray-200'}`}>Sell / Short</button>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label className="text-xs text-gray-500 block mb-1">Order Type</label>
-                                                        <select value={orderType} onChange={e => setOrderType(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none text-white">
-                                                            <option value="LIMIT">Limit</option>
-                                                            <option value="MARKET">Market</option>
-                                                        </select>
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs text-gray-500 block mb-1">Time in Force</label>
-                                                        <select value={orderCondition} onChange={e => setOrderCondition(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none text-white">
-                                                            <option value="DAY">Day</option>
-                                                            <option value="IOC">IOC</option>
-                                                            <option value="FOK">FOK</option>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div className="grid grid-cols-2 gap-3">
-                                                    <div>
-                                                        <label className="text-xs text-gray-500 block mb-1">Shares</label>
-                                                        <input type="number" min="1" value={orderQty} onChange={e => setOrderQty(e.target.value)} className="w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-mono text-right text-white" />
-                                                    </div>
-                                                    <div>
-                                                        <label className="text-xs text-gray-500 block mb-1">Price ($)</label>
-                                                        <input type="number" step="0.01" disabled={orderType === 'MARKET'} value={orderType === 'MARKET' ? '' : orderPrice} onChange={e => setOrderPrice(e.target.value)} placeholder={orderType === 'MARKET' ? 'MKT' : selectedStock.price.toFixed(2)} className={`w-full bg-gray-800 border border-gray-700 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none font-mono text-right text-white ${orderType === 'MARKET' ? 'opacity-50 cursor-not-allowed' : ''}`} />
-                                                    </div>
-                                                </div>
-
-                                                <div className="pt-2">
-                                                    <button type="submit" className={`w-full py-3 rounded-lg font-bold text-white shadow-lg transform transition active:scale-95 ${orderSide === 'BUY' ? 'bg-green-600 hover:bg-green-500' : 'bg-red-600 hover:bg-red-500'}`}>
-                                                        {orderSide === 'BUY' ? 'SUBMIT BUY ORDER' : 'SUBMIT SELL ORDER'}
-                                                    </button>
-                                                </div>
-                                                
-                                                <div className="text-center text-xs text-gray-500">
-                                                    Est. Total: <span className="text-gray-300 font-mono">{formatMoney((parseFloat(orderPrice) || selectedStock.price) * parseInt(orderQty))}</span>
-                                                </div>
-                                            </form>
-                                        </div>
-
-                                        {/* ORDER BOOK / DEPTH */}
-                                        <div className="w-full lg:w-1/2 bg-gray-900 rounded-xl border border-gray-800 p-5 shadow-lg h-fit">
-                                            <h3 className="font-bold text-gray-200 mb-3 text-sm">Level 2 Data (Simulated)</h3>
-                                            <div className="grid grid-cols-2 gap-2 text-xs font-mono mb-2 text-gray-500 uppercase">
-                                                <div>Bid Size @ Price</div>
-                                                <div className="text-right">Price @ Ask Size</div>
-                                            </div>
-                                            <div className="space-y-0.5">
-                                                {/* Asks (Red) - Sellers - Top Down */}
-                                                {[4,3,2,1,0].map(i => {
-                                                    const p = selectedStock.price + (i+1)*0.05;
-                                                    const size = Math.floor(Math.random() * 500) + 100;
-                                                    return (
-                                                        <div key={`ask-${i}`} className="flex justify-between items-center bg-red-900/10 hover:bg-red-900/20 cursor-pointer py-1 px-2 rounded" onClick={() => setOrderPrice(p.toFixed(2))}>
-                                                            <span></span>
-                                                            <div className="text-red-400 flex gap-4">
-                                                                <span>{p.toFixed(2)}</span>
-                                                                <span className="text-gray-400 w-8 text-right">{size}</span>
-                                                            </div>
-                                                        </div>
-                                                    )
-                                                })}
-                                                
-                                                {/* Spread / Current */}
-                                                <div className="py-2 flex justify-center items-center border-y border-gray-700 my-1">
-                                                    <span className="text-lg font-bold text-white">{selectedStock.price.toFixed(2)}</span>
-                                                </div>
-
-                                                {/* Bids (Green) - Buyers - Top Down */}
-                                                {[0,1,2,3,4].map(i => {
-                                                    const p = selectedStock.price - (i+1)*0.05;
-                                                    const size = Math.floor(Math.random() * 500) + 100;
-                                                    return (
-                                                        <div key={`bid-${i}`} className="flex justify-between items-center bg-green-900/10 hover:bg-green-900/20 cursor-pointer py-1 px-2 rounded" onClick={() => setOrderPrice(p.toFixed(2))}>
-                                                            <div className="text-green-400 flex gap-4">
-                                                                <span className="text-gray-400 w-8">{size}</span>
-                                                                <span>{p.toFixed(2)}</span>
-                                                            </div>
-                                                            <span></span>
-                                                        </div>
-                                                    )
-                                                })}
-                                            </div>
-                                        </div>
+                            {/* Bottom Split: Positions & Orders */}
+                            <div className="h-1/3 min-h-[200px] border-t border-gray-800 flex">
+                                {/* Positions Col */}
+                                <div className="flex-1 border-r border-gray-800 flex flex-col bg-gray-900/20">
+                                    <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2">
+                                        <Icons.Briefcase size={12}/> Positions
                                     </div>
-                                )}
-
-                                {/* CHART TAB CONTENT */}
-                                {activeTab === 'CHART' && (
-                                    <div className="w-full h-[400px] md:h-[500px] bg-gray-900 border border-gray-800 rounded-xl p-4 shadow-lg">
-                                        <div className="h-full w-full">
-                                            <StockChart 
-                                                stockCode={selectedStockCode}
-                                                history={priceHistory[selectedStockCode]}
-                                            />
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* POSITIONS & ORDERS LIST (Always Visible below) */}
-                                <div className="mt-8">
-                                    <h3 className="text-sm font-bold text-gray-400 mb-4 uppercase tracking-wider">Positions & Active Orders</h3>
-                                    <div className="bg-gray-900 rounded-xl border border-gray-800 overflow-hidden">
-                                        <div className="overflow-x-auto">
-                                            <table className="w-full text-sm text-left">
-                                                <thead className="text-xs text-gray-500 bg-gray-950 uppercase border-b border-gray-800">
-                                                    <tr>
-                                                        <th className="px-4 py-3">Symbol</th>
-                                                        <th className="px-4 py-3 text-right">Qty</th>
-                                                        <th className="px-4 py-3 text-right">Avg Price</th>
-                                                        <th className="px-4 py-3 text-right">Last</th>
-                                                        <th className="px-4 py-3 text-right">Mkt Val</th>
-                                                        <th className="px-4 py-3 text-right">P/L Open</th>
+                                    <div className="flex-1 overflow-y-auto">
+                                        <table className="w-full text-left text-[11px]">
+                                            <thead className="text-gray-500 sticky top-0 bg-[#0b0e11]">
+                                                <tr>
+                                                    <th className="pl-3 py-1">Sym</th>
+                                                    <th className="text-right">Qty</th>
+                                                    <th className="text-right">Avg</th>
+                                                    <th className="text-right">Last</th>
+                                                    <th className="text-right pr-3">P/L</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="font-mono-num divide-y divide-gray-800/50">
+                                                {pos.map(p => (
+                                                    <tr key={p.code} className="hover:bg-gray-800/30 cursor-pointer" onClick={() => setSelCode(p.code)}>
+                                                        <td className="pl-3 py-1 text-gray-300 font-bold">{p.code}</td>
+                                                        <td className={`text-right ${p.qty>0?'text-blue-400':'text-purple-400'}`}>{p.qty}</td>
+                                                        <td className="text-right text-gray-500">{p.avg.toFixed(2)}</td>
+                                                        <td className="text-right text-gray-300">{p.mark.toFixed(2)}</td>
+                                                        <td className={`text-right pr-3 ${col(p.upl)}`}>{p.upl.toFixed(2)}</td>
                                                     </tr>
-                                                </thead>
-                                                <tbody className="divide-y divide-gray-800">
-                                                    {positions.length === 0 && <tr><td colSpan="6" className="p-4 text-center text-gray-600 italic">No open positions</td></tr>}
-                                                    {positions.map(pos => (
-                                                        <tr key={pos.code} className="hover:bg-gray-800/50 transition-colors">
-                                                            <td className="px-4 py-3 font-bold text-white">{pos.code}</td>
-                                                            <td className={`px-4 py-3 text-right font-mono ${pos.quantity > 0 ? 'text-blue-400' : 'text-purple-400'}`}>
-                                                                {pos.quantity}
-                                                            </td>
-                                                            <td className="px-4 py-3 text-right font-mono text-gray-400">{pos.averageCost.toFixed(2)}</td>
-                                                            <td className="px-4 py-3 text-right font-mono text-white">{pos.currentPrice.toFixed(2)}</td>
-                                                            <td className="px-4 py-3 text-right font-mono text-gray-300">{formatMoney(pos.marketValue)}</td>
-                                                            <td className={`px-4 py-3 text-right font-mono font-bold ${getColorClass(pos.unrealizedPL)}`}>
-                                                                {formatMoney(pos.unrealizedPL)} <span className="text-xs opacity-70 ml-1">({formatPercent(pos.unrealizedPLPercent)})</span>
-                                                            </td>
-                                                        </tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
+                                                ))}
+                                                {pos.length === 0 && <tr><td colSpan="5" className="text-center py-4 text-gray-600 italic">Flat</td></tr>}
+                                            </tbody>
+                                        </table>
                                     </div>
                                 </div>
 
+                                {/* Active Orders Col */}
+                                <div className="flex-1 flex flex-col bg-gray-900/20">
+                                    <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2">
+                                        <Icons.List size={12}/> Working Orders
+                                    </div>
+                                    <div className="flex-1 overflow-y-auto">
+                                        <table className="w-full text-left text-[11px]">
+                                            <thead className="text-gray-500 sticky top-0 bg-[#0b0e11]">
+                                                <tr>
+                                                    <th className="pl-3 py-1">Time</th>
+                                                    <th>Side</th>
+                                                    <th>Sym</th>
+                                                    <th className="text-right">Px</th>
+                                                    <th className="text-right">Qty</th>
+                                                    <th className="text-center pr-2">cx</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="font-mono-num divide-y divide-gray-800/50">
+                                                {activeOrders.map(o => (
+                                                    <tr key={o.id} className="hover:bg-gray-800/30">
+                                                        <td className="pl-3 py-1 text-gray-500">{o.time.split(' ')[0]}</td>
+                                                        <td className={o.side==='BUY'?'text-green-500':'text-red-500'}>{o.side}</td>
+                                                        <td className="text-gray-300">{o.code}</td>
+                                                        <td className="text-right">{o.type==='MARKET'?'MKT':o.price.toFixed(2)}</td>
+                                                        <td className="text-right text-white">{o.qty}</td>
+                                                        <td className="text-center pr-2">
+                                                            <button onClick={()=>cancelOrder(o.id)} className="text-gray-600 hover:text-red-400"><Icons.X size={12}/></button>
+                                                        </td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* 3. ORDER ENTRY & DEPTH (Right - Fixed Width) */}
+                        <div className="w-72 flex flex-col bg-gray-900/80 border-l border-gray-800">
+                            
+                            {/* Level 2 DOM */}
+                            <div className="flex-1 flex flex-col overflow-hidden border-b border-gray-800">
+                                <div className="px-2 py-1 bg-gray-950 text-[10px] text-gray-500 font-bold flex justify-between">
+                                    <span>BID SIZE</span><span>PRICE</span><span>ASK SIZE</span>
+                                </div>
+                                <div className="flex-1 overflow-y-auto bg-[#0b0e11] flex flex-col justify-center relative">
+                                    {/* Asks (Top) */}
+                                    {[4,3,2,1,0].map(i => {
+                                        const p = selStock.price + (i+1)*0.01;
+                                        const sz = Math.floor(Math.random()*2000)+100;
+                                        return <DepthRow key={`ask${i}`} price={p} size={sz} type="ask"/>
+                                    })}
+                                    
+                                    {/* Spread */}
+                                    <div className="py-1 bg-gray-800 text-center font-bold text-white border-y border-gray-700 text-sm">{selStock.price.toFixed(2)}</div>
+                                    
+                                    {/* Bids (Bottom) */}
+                                    {[0,1,2,3,4].map(i => {
+                                        const p = selStock.price - (i+1)*0.01;
+                                        const sz = Math.floor(Math.random()*2000)+100;
+                                        return <DepthRow key={`bid${i}`} price={p} size={sz} type="bid"/>
+                                    })}
+                                </div>
                             </div>
 
-                            {/* FOOTER STATUS BAR */}
-                            <div className="h-10 bg-gray-900 border-t border-gray-800 flex items-center justify-between px-4 text-xs text-gray-400 shrink-0">
-                                <div className="flex gap-4">
-                                    <span>Cash: <span className="text-white font-mono">{formatMoney(account.cash)}</span></span>
-                                    <span>Eq: <span className="text-white font-mono">{formatMoney(account.totalAssets)}</span></span>
+                            {/* Order Entry Form */}
+                            <div className="p-3 bg-gray-900">
+                                <div className="flex justify-between mb-2 text-xs">
+                                    <span className="font-bold text-gray-300">Order Ticket</span>
+                                    {currentPos && <span className={currentPos.qty>0?'text-blue-400':'text-purple-400'}>{currentPos.qty} SHRS</span>}
                                 </div>
-                                <div className="flex gap-2 items-center">
-                                    <div className={`w-1.5 h-1.5 rounded-full ${apiKey ? 'bg-green-500' : 'bg-gray-500'}`}></div>
-                                    <span>API: {apiKey ? 'Connected' : 'Demo Mode'}</span>
-                                </div>
-                            </div>
+                                
+                                <form onSubmit={placeOrder} className="space-y-2">
+                                    <div className="flex gap-1 p-1 bg-black rounded border border-gray-700">
+                                        <button type="button" onClick={()=>setOrder(p=>({...p, side:'BUY'}))} className={`flex-1 py-1 text-xs font-bold rounded ${order.side==='BUY'?'bg-green-600 text-white':'text-gray-500 hover:text-gray-300'}`}>BUY</button>
+                                        <button type="button" onClick={()=>setOrder(p=>({...p, side:'SELL'}))} className={`flex-1 py-1 text-xs font-bold rounded ${order.side==='SELL'?'bg-red-600 text-white':'text-gray-500 hover:text-gray-300'}`}>SELL</button>
+                                    </div>
 
-                        </main>
+                                    <div className="grid grid-cols-2 gap-2">
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-gray-500">Shares</label>
+                                            <input type="number" value={order.qty} onChange={e=>setOrder(p=>({...p, qty:e.target.value}))} className="w-full bg-black border border-gray-700 rounded px-2 py-1 text-right text-white text-sm outline-none focus:border-blue-500" />
+                                        </div>
+                                        <div className="space-y-1">
+                                            <label className="text-[10px] text-gray-500">Price</label>
+                                            <input type="number" disabled={order.type==='MARKET'} value={order.price} onChange={e=>setOrder(p=>({...p, price:e.target.value}))} className="w-full bg-black border border-gray-700 rounded px-2 py-1 text-right text-white text-sm outline-none focus:border-blue-500 disabled:opacity-50" placeholder={order.type==='MARKET'?'MKT':''} />
+                                        </div>
+                                    </div>
+
+                                    {/* Quick Size Buttons */}
+                                    <div className="flex gap-1">
+                                        {[0.25, 0.5, 1].map(pct => (
+                                            <button key={pct} type="button" onClick={()=>setQtyByPct(pct)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-[10px] text-gray-400 rounded py-0.5 border border-gray-700">{pct*100}%</button>
+                                        ))}
+                                    </div>
+
+                                    <div className="flex gap-2">
+                                        <select value={order.type} onChange={e=>setOrder(p=>({...p, type:e.target.value}))} className="flex-1 bg-gray-800 border border-gray-700 rounded text-xs text-white px-1 py-1 outline-none">
+                                            <option value="LIMIT">LMT</option>
+                                            <option value="MARKET">MKT</option>
+                                        </select>
+                                        <select value={order.tif} onChange={e=>setOrder(p=>({...p, tif:e.target.value}))} className="flex-1 bg-gray-800 border border-gray-700 rounded text-xs text-white px-1 py-1 outline-none">
+                                            <option value="DAY">DAY</option>
+                                            <option value="IOC">IOC</option>
+                                            <option value="FOK">FOK</option>
+                                        </select>
+                                    </div>
+
+                                    <button type="submit" className={`w-full py-3 rounded font-bold text-sm text-white shadow-lg mt-2 ${order.side==='BUY'?'bg-green-700 hover:bg-green-600':'bg-red-700 hover:bg-red-600'}`}>
+                                        {order.side}
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
 
-                    {/* FLOATING ANALYST BUTTON */}
-                    <button 
-                        onClick={() => setIsAnalystOpen(true)}
-                        className="fixed bottom-16 md:bottom-8 right-4 md:right-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4 rounded-full shadow-2xl shadow-purple-900/50 hover:scale-110 transition-transform z-50 group"
-                    >
-                        <Sparkles size={24} className="animate-pulse-slow" />
+                    {/* AI BTN */}
+                    <button onClick={()=>setAiOpen(true)} className="fixed bottom-4 right-4 p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-xl border border-indigo-400/30 z-50 transition-all hover:scale-105">
+                        <Icons.Sparkles/>
                     </button>
 
                     {/* AI MODAL */}
-                    <AIAnalystModal isOpen={isAnalystOpen} onClose={() => setIsAnalystOpen(false)} />
+                    {aiOpen && (
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
+                            <div className="bg-gray-900 border border-gray-700 w-96 rounded-lg shadow-2xl overflow-hidden">
+                                <div className="bg-gray-800 p-3 flex justify-between items-center border-b border-gray-700">
+                                    <div className="flex items-center gap-2 text-white font-bold"><Icons.Sparkles className="text-indigo-400"/> Gemini Analyst</div>
+                                    <button onClick={()=>setAiOpen(false)} className="text-gray-500 hover:text-white"><Icons.X/></button>
+                                </div>
+                                <div className="p-4 h-64 overflow-y-auto text-sm text-gray-300">
+                                    <p className="mb-2">Analyzing <strong>{selStock.n} ({selStock.c})</strong>...</p>
+                                    <div className="p-3 bg-indigo-900/20 border border-indigo-500/30 rounded text-indigo-200 text-xs leading-relaxed">
+                                        System detects increasing volume near the support level of ${selStock.low}. Momentum indicators suggest a potential breakout if resistance at ${selStock.high} is cleared. (Mock Data)
+                                    </div>
+                                </div>
+                                <div className="p-3 bg-gray-800 border-t border-gray-700">
+                                    <div className="relative">
+                                        <input type="text" className="w-full bg-gray-900 border border-gray-600 rounded pl-3 pr-8 py-2 text-xs text-white focus:border-indigo-500 outline-none" placeholder="Ask about market trends..." />
+                                        <Icons.Send size={14} className="absolute right-2 top-2.5 text-gray-500"/>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
 
-                    {/* TOAST NOTIFICATION */}
-                    {notification && (
-                        <div className={`fixed top-6 right-6 px-6 py-4 rounded-xl shadow-2xl flex items-center gap-3 z-50 fade-in border border-white/10 ${notification.type === 'success' ? 'bg-green-900/90 text-green-100' : notification.type === 'error' ? 'bg-red-900/90 text-red-100' : 'bg-blue-900/90 text-blue-100'}`}>
-                            {notification.type === 'success' ? <CheckCircle size={20}/> : <AlertCircle size={20}/>}
-                            <span className="font-medium">{notification.msg}</span>
+                    {/* TOAST */}
+                    {msg && (
+                        <div className={`fixed top-16 right-4 px-4 py-3 rounded bg-gray-800 border-l-4 shadow-2xl text-sm font-bold flex items-center gap-3 z-[100] ${msg.type==='error'?'border-red-500 text-red-400':'border-green-500 text-green-400'}`}>
+                            {msg.txt}
                         </div>
                     )}
                 </div>
