@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTrader: MLB Edition (Direct Access)</title>
+    <title>ProTrader: Enhanced Technicals</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
@@ -26,9 +26,15 @@
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
         
-        /* Utility for depth bars */
-        .depth-bar-bid { background: linear-gradient(90deg, rgba(34,197,94,0.15) 0%, rgba(34,197,94,0.05) 100%); }
-        .depth-bar-ask { background: linear-gradient(90deg, rgba(239,68,68,0.15) 0%, rgba(239,68,68,0.05) 100%); }
+        /* Animations: Tick Flash for UX */
+        .flash-green { animation: flashG 0.2s ease-out; }
+        .flash-red { animation: flashR 0.2s ease-out; }
+        @keyframes flashG { 0% { background-color: rgba(34, 197, 94, 0.5); } 100% { background-color: transparent; } }
+        @keyframes flashR { 0% { background-color: rgba(239, 68, 68, 0.5); } 100% { background-color: transparent; } }
+        
+        /* Custom DOM Styling */
+        .dom-row { transition: background-color 0.1s; }
+        .dom-container { position: relative; }
     </style>
 </head>
 <body class="text-gray-300 overflow-hidden selection:bg-blue-500/30 selection:text-blue-200">
@@ -50,14 +56,11 @@
 
         const Icons = {
             Search: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
-            Chart: (p) => <Icon {...p} d="M3 3v18h18 M18 17V9 M13 17V5 M8 17v-3"/>,
-            List: (p) => <Icon {...p} d="M8 6h13 M8 12h13 M8 18h13 M3 6h.01 M3 12h.01 M3 18h.01"/>,
             Briefcase: (p) => <Icon {...p} d="M20 7h-3a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>,
             X: (p) => <Icon {...p} d="M18 6L6 18 M6 6l12 12"/>,
             Sparkles: (p) => <Icon {...p} d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>,
-            Send: (p) => <Icon {...p} d="M22 2L11 13 M22 2l-7 20-4-9-9-4 20-7z"/>,
             Settings: (p) => (
-                <Icon {...p} d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V4a2 2 0 0 0-2-2z">
+                <Icon {...p} d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l-.15-.09a2 2 0 0 0 .73-2.73l.22-.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V4a2 2 0 0 0-2-2z">
                     <circle cx="12" cy="12" r="3"/>
                 </Icon>
             ),
@@ -71,32 +74,69 @@
             { c:'BOS', n:'Boston Red Sox', p:95.40 }, { c:'ATL', n:'Atlanta Braves', p:120.10 },
             { c:'HOU', n:'Houston Astros', p:110.35 }, { c:'PHI', n:'Phila Phillies', p:105.80 },
             { c:'BAL', n:'Baltimore Orioles', p:88.20 }, { c:'CHC', n:'Chi Cubs', p:75.60 },
-            { c:'TOR', n:'Toronto Blue Jays', p:65.40 }, { c:'NYM', n:'NY Mets', p:92.15 },
-            { c:'SF', n:'SF Giants', p:82.30 }, { c:'SD', n:'SD Padres', p:98.50 },
-            { c:'TEX', n:'Texas Rangers', p:78.90 }, { c:'SEA', n:'Seattle Mariners', p:68.45 },
-            { c:'STL', n:'St. Louis Cardinals', p:72.10 }, { c:'TB', n:'Tampa Bay Rays', p:55.30 },
-            { c:'MIN', n:'Minnesota Twins', p:48.90 }, { c:'CLE', n:'Guardians', p:52.40 },
-            { c:'MIL', n:'Milwaukee Brewers', p:50.10 }, { c:'ARI', n:'Arizona D-backs', p:58.60 },
-            { c:'MIA', n:'Miami Marlins', p:25.30 }, { c:'CIN', n:'Cincinnati Reds', p:32.15 },
-            { c:'DET', n:'Detroit Tigers', p:28.90 }, { c:'PIT', n:'Pittsburgh Pirates', p:22.40 },
-            { c:'WSH', n:'Washington Nationals', p:35.60 }, { c:'LAA', n:'LA Angels', p:45.20 },
-            { c:'KC', n:'KC Royals', p:38.50 }, { c:'COL', n:'Colorado Rockies', p:29.80 },
-            { c:'CWS', n:'Chi White Sox', p:18.20 }, { c:'OAK', n:'Oakland Athletics', p:15.10 },
+            { c:'NYM', n:'NY Mets', p:92.15 }, { c:'SF', n:'SF Giants', p:82.30 },
         ];
 
         const fmtUSD = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n);
-        const fmtPct = (n) => `${n > 0 ? '+' : ''}${n.toFixed(2)}%`;
+        const fmtPct = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
         const col = (n) => n > 0 ? 'text-green-500' : n < 0 ? 'text-red-500' : 'text-gray-400';
+        
+        // --- INDICATOR CALCULATION HELPERS (Simple EMA for Mock) ---
+        const calculateEMA = (data, period, closeKey='c', prevEma) => {
+            const k = 2 / (period + 1);
+            let emaArr = [];
+            let currentEma = prevEma !== undefined ? prevEma : parseFloat(data[0][closeKey]);
+
+            data.forEach((d, i) => {
+                const close = parseFloat(d[closeKey]);
+                if (i === 0 && prevEma === undefined) {
+                    // Simple average for the first point if no previous EMA provided
+                    currentEma = close;
+                } else if (i === 0 && prevEma !== undefined) {
+                    // Use provided previous EMA as start (e.g., for continuous calculations)
+                    currentEma = currentEma * (1 - k) + close * k;
+                } else {
+                    currentEma = currentEma * (1 - k) + close * k;
+                }
+                emaArr.push(currentEma);
+            });
+            return emaArr;
+        };
+
+        const calculateMACDSeries = (data) => {
+            if (data.length < 26) return data.map(d => ({...d, ema12: null, ema26: null, macdLine: null, signalLine: null, histogram: null}));
+            
+            const closes = data.map(d => ({ c: d.c }));
+            const ema12Arr = calculateEMA(closes, 12, 'c');
+            const ema26Arr = calculateEMA(closes, 26, 'c');
+            
+            const macdData = data.map((d, i) => ({
+                ...d,
+                ema12: ema12Arr[i],
+                ema26: ema26Arr[i],
+                macdLine: (ema12Arr[i] - ema26Arr[i])
+            })).filter((d, i) => i >= 25); // Start MACD from index 25
+
+            // Calculate Signal Line (EMA of MACD Line, Period 9)
+            const macdLines = macdData.map(d => ({ c: d.macdLine }));
+            const signalArr = calculateEMA(macdLines, 9, 'c');
+
+            return macdData.map((d, i) => ({
+                ...d,
+                signalLine: signalArr[i],
+                histogram: d.macdLine - signalArr[i]
+            }));
+        };
+
 
         // --- CANDLESTICK CHART COMPONENT ---
-        const CandlestickChart = ({ data }) => {
+        const CandlestickChart = React.memo(({ data, interval }) => {
             const containerRef = useRef(null);
             const [dims, setDims] = useState({ w: 0, h: 0 });
 
-            // Use ResizeObserver to handle dynamic sizing issues
+            // Sizing via ResizeObserver
             useEffect(() => {
                 if (!containerRef.current) return;
-                
                 const resizeObserver = new ResizeObserver(entries => {
                     for (let entry of entries) {
                         const { width, height } = entry.contentRect;
@@ -105,49 +145,101 @@
                         }
                     }
                 });
-                
                 resizeObserver.observe(containerRef.current);
                 return () => resizeObserver.disconnect();
             }, []);
 
-            if (!data || data.length < 2) return <div className="h-full flex items-center justify-center text-xs text-gray-600 animate-pulse">LOADING DATA...</div>;
+            if (!data || data.length < 2) return (
+                <div className="h-full flex items-center justify-center text-xs text-gray-600 animate-pulse bg-[#0b0e11]" ref={containerRef}>
+                    正在初始化市場數據...
+                </div>
+            );
 
             const { w, h } = dims;
-            // If dimensions are still 0 (initial render), don't render chart content yet
-            if (w === 0 || h === 0) return <div ref={containerRef} className="w-full h-full" />;
+            if (w === 0 || h === 0) return <div ref={containerRef} className="w-full h-full bg-[#0b0e11]" />;
 
-            const pT=20, pB=30, pR=50, pL=10;
+            // --- CHART LAYOUT DEFINITIONS ---
+            const pT=20, pB=50, pR=50, pL=10;
+            const H_total = h - pT - pB;
+            
+            // Panel Heights (Candles:Volume:MACD -> 60:20:20)
+            const H_candles = H_total * 0.6;
+            const H_volume = H_total * 0.2;
+            const H_macd = H_total * 0.2;
+
+            // Panel Y Positions
+            const Y_candles = pT;
+            const Y_volume = pT + H_candles + 5; // +5 for margin
+            const Y_macd = Y_volume + H_volume + 5; // +5 for margin
+
             const cW = w - pL - pR;
-            const cH = h - pT - pB;
 
             // Visible window: Last 60 candles max
             const visibleData = data.slice(-60);
-            const minP = Math.min(...visibleData.map(d => d.l)) * 0.999;
-            const maxP = Math.max(...visibleData.map(d => d.h)) * 1.001;
-            const range = maxP - minP || 1;
             
-            const maxVol = Math.max(...visibleData.map(d => d.v)) || 1;
+            // --- TECHNICAL ANALYSIS CALCULATION ---
+            const macdData = calculateMACDSeries(visibleData);
+
+            // Find Min/Max for Price Scaling
+            let minP = Infinity;
+            let maxP = -Infinity;
+            let maxVol = 0;
+            let maxMacdHist = 0;
+            let minMacdLine = Infinity;
+            let maxMacdLine = -Infinity;
+            
+            visibleData.forEach(d => {
+                if (d.l < minP) minP = d.l;
+                if (d.h > maxP) maxP = d.h;
+                if (d.v > maxVol) maxVol = d.v;
+            });
+            
+            macdData.forEach(d => {
+                if (d.histogram !== null) {
+                    maxMacdHist = Math.max(maxMacdHist, Math.abs(d.histogram));
+                    minMacdLine = Math.min(minMacdLine, d.macdLine, d.signalLine);
+                    maxMacdLine = Math.max(maxMacdLine, d.macdLine, d.signalLine);
+                }
+            });
+
+            // Price Padding
+            minP = minP * 0.998;
+            maxP = maxP * 1.002;
+            const rangeP = maxP - minP || 1;
+            maxVol = maxVol || 1;
+            const rangeMACD = (maxMacdLine - minMacdLine) || 0.1;
 
             const getX = (i) => pL + (i / Math.max(visibleData.length - 1, 1)) * cW;
-            const getY = (p) => pT + cH - ((p - minP) / range) * cH;
-            
-            // Calculate MA5
+            // Price Panel Scaling
+            const getY = (p) => Y_candles + H_candles - ((p - minP) / rangeP) * H_candles;
+            // Volume Panel Scaling
+            const getVolY = (v) => Y_volume + H_volume - (v / maxVol) * H_volume;
+            // MACD Panel Scaling
+            const getMacdY = (v) => Y_macd + H_macd - ((v - minMacdLine) / rangeMACD) * H_macd;
+            const getMacdZeroY = getMacdY(0); // Y position of the zero line
+
+            // Calculate MA5 (for display)
             const ma5 = visibleData.map((d, i, arr) => {
                 if(i < 4) return null;
                 const sum = arr.slice(i-4, i+1).reduce((a,b) => a + b.c, 0);
                 return sum/5;
             });
+            
+            const lastPrice = visibleData[visibleData.length-1].c;
 
             return (
-                <div ref={containerRef} className="w-full h-full relative select-none">
+                <div ref={containerRef} className="w-full h-full relative select-none bg-[#0b0e11]">
                     <svg width={w} height={h} className="overflow-visible">
-                        {/* Grid & Prices (Y-Axis) */}
+                        
+                        {/* 1. CANDLESTICK AREA */}
+
+                        {/* Price Grid (Y-Axis) */}
                         {[0, 0.25, 0.5, 0.75, 1].map(tick => {
-                            const p = minP + range * tick;
+                            const p = minP + rangeP * tick;
                             const y = getY(p);
                             return (
-                                <g key={tick}>
-                                    <line x1={pL} y1={y} x2={w-pR} y2={y} stroke="#1f2937" strokeDasharray="2"/>
+                                <g key={`grid-p-${tick}`}>
+                                    <line x1={pL} y1={y} x2={w-pR} y2={y} stroke="#1f2937" strokeDasharray="1 3"/>
                                     <text x={w} y={y} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="middle" className="font-mono-num">{p.toFixed(2)}</text>
                                 </g>
                             );
@@ -156,7 +248,7 @@
                         {/* Candles */}
                         {visibleData.map((d, i) => {
                             const x = getX(i);
-                            const barW = Math.max(1, (cW / visibleData.length) * 0.7);
+                            const barW = Math.max(4, (cW / visibleData.length) * 0.7); 
                             const isUp = d.c >= d.o;
                             const color = isUp ? "#22c55e" : "#ef4444";
                             const yHigh = getY(d.h);
@@ -164,23 +256,10 @@
                             const yOpen = getY(d.o);
                             const yClose = getY(d.c);
                             
-                            // Volume Bar
-                            const volH = (d.v / maxVol) * (cH * 0.3); // Max 30% height
-                            
                             return (
-                                <g key={i}>
-                                    {/* Volume */}
-                                    <rect x={x - barW/2} y={h - pB - volH} width={barW} height={volH} fill={color} opacity="0.2" />
-                                    {/* Wick */}
+                                <g key={`candle-${i}`}>
                                     <line x1={x} y1={yHigh} x2={x} y2={yLow} stroke={color} strokeWidth="1" />
-                                    {/* Body */}
-                                    <rect 
-                                        x={x - barW/2} 
-                                        y={Math.min(yOpen, yClose)} 
-                                        width={barW} 
-                                        height={Math.max(Math.abs(yOpen - yClose), 1)} 
-                                        fill={color} 
-                                    />
+                                    <rect x={x - barW/2} y={Math.min(yOpen, yClose)} width={barW} height={Math.max(Math.abs(yOpen - yClose), 1)} fill={color} />
                                 </g>
                             )
                         })}
@@ -188,105 +267,244 @@
                         {/* MA5 Line */}
                         <polyline 
                             points={ma5.map((v, i) => v ? `${getX(i)},${getY(v)}` : null).filter(x=>x).join(' ')}
-                            fill="none" stroke="#fbbf24" strokeWidth="1" opacity="0.8"
+                            fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.8"
                         />
                         
-                        {/* Current Price Indicator */}
-                        <line x1={pL} y1={getY(visibleData[visibleData.length-1].c)} x2={w-pR} y2={getY(visibleData[visibleData.length-1].c)} stroke="#3b82f6" strokeWidth="1" strokeDasharray="4" opacity="0.5"/>
+                        {/* Current Price Line & Label */}
+                        <line x1={pL} y1={getY(lastPrice)} x2={w-pR} y2={getY(lastPrice)} stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="4" opacity="0.8"/>
+                        <rect x={w-pR} y={getY(lastPrice)-8} width={pR} height={16} fill="#3b82f6" opacity="0.9"/>
+                        <text x={w-2} y={getY(lastPrice)} fontSize="10" fill="white" textAnchor="end" alignmentBaseline="middle" className="font-mono-num font-bold">{lastPrice.toFixed(2)}</text>
+
+
+                        {/* 2. VOLUME AREA */}
+                        
+                        {/* Separator Line */}
+                        <line x1={pL} y1={Y_volume-2} x2={w-pR} y2={Y_volume-2} stroke="#1f2937" strokeWidth="1"/>
+                        
+                        {/* Volume Grid */}
+                        <text x={w} y={Y_volume} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging">成交量</text>
+                        <text x={w-2} y={Y_volume + 10} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging" className="font-mono-num">{maxVol.toLocaleString()}</text>
+                        
+                        {/* Volume Bars */}
+                        {visibleData.map((d, i) => {
+                            const x = getX(i);
+                            const barW = Math.max(2, (cW / visibleData.length) * 0.7);
+                            const isUp = d.c >= d.o;
+                            const color = isUp ? "#22c55e" : "#ef4444";
+                            const volH = (d.v / maxVol) * H_volume;
+                            
+                            return (
+                                <g key={`vol-${i}`}>
+                                    <rect x={x - barW/2} y={Y_volume + H_volume - volH} width={barW} height={volH} fill={color} opacity="0.7" />
+                                </g>
+                            )
+                        })}
+                        <line x1={pL} y1={Y_volume + H_volume} x2={w-pR} y2={Y_volume + H_volume} stroke="#1f2937" strokeWidth="1"/>
+
+                        {/* 3. MACD AREA */}
+                        
+                        {/* Separator Line */}
+                        <line x1={pL} y1={Y_macd-2} x2={w-pR} y2={Y_macd-2} stroke="#1f2937" strokeWidth="1"/>
+                        
+                        {/* MACD Label & Zero Line */}
+                        <text x={w} y={Y_macd} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging">MACD(12, 26, 9)</text>
+                        <line x1={pL} y1={getMacdZeroY} x2={w-pR} y2={getMacdZeroY} stroke="#6b7280" strokeWidth="1" strokeDasharray="2 2"/>
+                        
+                        {/* MACD Max/Min Labels */}
+                        <text x={w-2} y={Y_macd + 10} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging" className="font-mono-num">{maxMacdLine.toFixed(3)}</text>
+                        <text x={w-2} y={Y_macd + H_macd - 5} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging" className="font-mono-num">{minMacdLine.toFixed(3)}</text>
+
+
+                        {/* MACD Histogram */}
+                        {macdData.map((d, i) => {
+                            const x = getX(i + visibleData.length - macdData.length); // X is based on visibleData index
+                            const barW = Math.max(2, (cW / visibleData.length) * 0.7);
+                            if(d.histogram === null) return null;
+                            const hY = getMacdY(d.macdLine - d.signalLine);
+                            const isUp = d.histogram >= 0;
+                            const color = isUp ? "#10b981" : "#f43f5e"; // Teal for positive, Rose for negative
+                            
+                            return (
+                                <g key={`macd-hist-${i}`}>
+                                    <line 
+                                        x1={x} y1={getMacdZeroY} 
+                                        x2={x} y2={hY} 
+                                        stroke={color} 
+                                        strokeWidth={barW} 
+                                        opacity="0.6"
+                                    />
+                                </g>
+                            )
+                        })}
+
+                        {/* MACD Line (Blue) */}
+                        <polyline 
+                            points={macdData.map((d, i) => d.macdLine !== null ? `${getX(i + visibleData.length - macdData.length)},${getMacdY(d.macdLine)}` : null).filter(x=>x).join(' ')}
+                            fill="none" stroke="#3b82f6" strokeWidth="1.5"
+                        />
+                        <text x={pL + 5} y={Y_macd + 10} fontSize="10" fill="#3b82f6" alignmentBaseline="hanging">MACD</text>
+
+                        {/* Signal Line (Orange) */}
+                        <polyline 
+                            points={macdData.map((d, i) => d.signalLine !== null ? `${getX(i + visibleData.length - macdData.length)},${getMacdY(d.signalLine)}` : null).filter(x=>x).join(' ')}
+                            fill="none" stroke="#f97316" strokeWidth="1.5"
+                        />
+                        <text x={pL + 40} y={Y_macd + 10} fontSize="10" fill="#f97316" alignmentBaseline="hanging">Signal</text>
+                        
                     </svg>
-                    {/* Labels */}
-                    <div className="absolute top-2 left-2 flex gap-4 text-[10px] font-mono text-gray-500">
-                        <span className="text-yellow-500">MA(5)</span>
-                        <span>VOL</span>
-                    </div>
+                    
+                    {/* Indicator Values */}
+                    {macdData.length > 0 && (
+                        <div className="absolute bottom-10 left-2 text-[10px] font-mono flex gap-3">
+                            <span className="text-yellow-500 font-bold">MA(5)</span>
+                            <span className="text-blue-500 font-bold">MACD: <span className="text-gray-200">{macdData[macdData.length-1].macdLine.toFixed(3)}</span></span>
+                            <span className="text-orange-500 font-bold">Signal: <span className="text-gray-200">{macdData[macdData.length-1].signalLine.toFixed(3)}</span></span>
+                            <span className={`font-bold ${macdData[macdData.length-1].histogram >= 0 ? 'text-teal-400' : 'text-rose-400'}`}>Hist: <span className="text-gray-200">{macdData[macdData.length-1].histogram.toFixed(3)}</span></span>
+                        </div>
+                    )}
                 </div>
             );
-        };
+        });
+
 
         // --- MAIN APP ---
         function App() {
             // State
             const [time, setTime] = useState(new Date());
-            const [stocks, setStocks] = useState(INITIAL_DATA.map(s => ({ ...s, price: s.p, high: s.p, low: s.p, open: s.p, vol: 0, change: 0, pct: 0 })));
+            const [stocks, setStocks] = useState(INITIAL_DATA.map(s => ({ ...s, price: s.p, refPrice: s.p, high: s.p, low: s.p, open: s.p, vol: 0, change: 0, pct: 0 })));
             const [selCode, setSelCode] = useState('NYY');
-            const [history, setHistory] = useState({}); // { CODE: [{o,h,l,c,v,time}] }
-            const [account, setAccount] = useState({ cash: INITIAL_CASH, equity: INITIAL_CASH, realized: 0 });
+            
+            // History: { Code: { '1S': [], '1M': [], current1M: {} } }
+            const [history, setHistory] = useState({}); 
+            const [chartInterval, setChartInterval] = useState('1M'); 
+
+            // Account State 
+            const [account, setAccount] = useState({ 
+                cash: INITIAL_CASH, 
+                realized: 0, 
+                uplTotal: 0, 
+                netLiq: INITIAL_CASH,
+                dayPL: 0
+            });
             const [pos, setPos] = useState([]);
             const [orders, setOrders] = useState([]);
             const [aiOpen, setAiOpen] = useState(false);
+            const [lastTradeDir, setLastTradeDir] = useState(null); // 'BUY' or 'SELL' for visual feedback
             
             // Order Entry State
             const [order, setOrder] = useState({ side: 'BUY', type: 'LIMIT', tif: 'DAY', qty: '', price: '' });
             const [msg, setMsg] = useState(null);
+            const priceFlashRef = useRef(null);
 
             // --- ENGINE: TICK & CANDLE GENERATION ---
             useEffect(() => {
-                // Init History
+                // Initial data setup (same as before)
                 const initHist = {};
                 stocks.forEach(s => {
-                    // Generate dummy history
-                    const arr = [];
+                    // Mock 1S Data (Used for continuous updates)
+                    const h1s = [];
                     let p = s.p;
                     for(let i=0; i<100; i++) {
                         let o = p;
-                        let c = o * (1 + (Math.random()-0.5)*0.004);
-                        let h = Math.max(o, c) * (1 + Math.random()*0.001);
-                        let l = Math.min(o, c) * (1 - Math.random()*0.001);
-                        arr.push({ o, h, l, c, v: Math.floor(Math.random()*1000), time: Date.now()-i*60000 });
+                        let c = o * (1 + (Math.random()-0.5)*0.002);
+                        let h = Math.max(o, c) * (1 + Math.random()*0.0005);
+                        let l = Math.min(o, c) * (1 - Math.random()*0.0005);
+                        h1s.push({ o:parseFloat(o.toFixed(2)), h:parseFloat(h.toFixed(2)), l:parseFloat(l.toFixed(2)), c:parseFloat(c.toFixed(2)), v: Math.floor(Math.random()*1000), time: Date.now()-(100-i)*1000 });
                         p = c;
                     }
-                    initHist[s.c] = arr.reverse();
+                    // Mock 1M Data
+                    const h1m = [];
+                    p = s.p * 0.95; 
+                    for(let i=0; i<60; i++) {
+                        let o = p;
+                        let c = o * (1 + (Math.random()-0.5)*0.01);
+                        let h = Math.max(o, c) * (1 + Math.random()*0.002);
+                        let l = Math.min(o, c) * (1 - Math.random()*0.002);
+                        h1m.push({ o:parseFloat(o.toFixed(2)), h:parseFloat(h.toFixed(2)), l:parseFloat(l.toFixed(2)), c:parseFloat(c.toFixed(2)), v: Math.floor(Math.random()*50000), time: Date.now()-(60-i)*60000 });
+                        p = c;
+                    }
+
+                    initHist[s.c] = { 
+                        '1S': h1s, '1M': h1m,
+                        current1M: { o: s.p, h: s.p, l: s.p, c: s.p, v: 0, startTime: Date.now() }
+                    };
                 });
                 setHistory(initHist);
 
+                // --- SIMULATION LOOP (1000ms) ---
                 const interval = setInterval(() => {
                     setTime(new Date());
                     
-                    // Market Simulation
-                    setStocks(prev => {
-                        const updated = prev.map(s => {
-                            if(Math.random() > 0.3) { // 70% chance to tick
-                                const move = (Math.random() - 0.5) * 0.05; // volatility
-                                let np = s.price + move;
+                    setStocks(prevStocks => {
+                        const updatedStocks = prevStocks.map(s => {
+                            let newVol = 0;
+                            let np = s.price;
+                            let moveDir = 0; // -1: down, 0: flat, 1: up
+                            
+                            if(Math.random() > 0.1) { // 90% chance of a tick
+                                const move = (Math.random() - 0.5) * 0.05; 
+                                np = s.price + move;
                                 np = Math.round(np * 100) / 100;
-                                return {
-                                    ...s,
-                                    price: np,
-                                    high: Math.max(s.high, np),
-                                    low: Math.min(s.low, np),
-                                    vol: s.vol + Math.floor(Math.random() * 50),
-                                    change: np - s.p, // s.p is ref price (prev close)
-                                    pct: (np - s.p)/s.p * 100
-                                };
+                                newVol = Math.floor(Math.random() * 200);
+                                moveDir = np > s.price ? 1 : np < s.price ? -1 : 0;
                             }
-                            return s;
+
+                            if (s.c === selCode && moveDir !== 0) {
+                                // Trigger flash effect for the actively viewed stock
+                                setLastTradeDir(moveDir > 0 ? 'BUY' : 'SELL');
+                                setTimeout(() => setLastTradeDir(null), 200);
+                            }
+
+                            return {
+                                ...s,
+                                price: np,
+                                high: Math.max(s.high, np),
+                                low: Math.min(s.low, np),
+                                vol: s.vol + newVol,
+                                change: np - s.refPrice, 
+                                pct: (np - s.refPrice)/s.refPrice * 100,
+                                lastVol: newVol 
+                            };
                         });
 
-                        // Update Candle History (Real-time accumulation simulation)
-                        setHistory(prevH => {
-                            const newH = { ...prevH };
-                            updated.forEach(s => {
-                                if(!newH[s.c]) return;
-                                const last = newH[s.c][newH[s.c].length - 1];
-                                // Simple logic: update last candle or create new every 3 seconds for demo speed
-                                if (Date.now() - last.time < 3000) {
-                                    last.c = s.price;
-                                    last.h = Math.max(last.h, s.price);
-                                    last.l = Math.min(last.l, s.price);
-                                    last.v += (s.vol - (updated.find(u=>u.c===s.c)?.oldVol || s.vol)); // approx delta
+                        // Candle Update Logic (simplified for brevity, focusing on the MACD/EMA requirement)
+                        setHistory(prevHist => {
+                            const newHist = { ...prevHist };
+                            const now = Date.now();
+
+                            updatedStocks.forEach(s => {
+                                if (!newHist[s.c]) return;
+
+                                // 1S Update
+                                const last1S = newHist[s.c]['1S'][newHist[s.c]['1S'].length - 1];
+                                const open1S = last1S ? last1S.c : s.price;
+                                const new1S = { o: open1S, h: Math.max(open1S, s.price), l: Math.min(open1S, s.price), c: s.price, v: s.lastVol, time: now };
+                                newHist[s.c]['1S'] = [...newHist[s.c]['1S'], new1S].slice(-120); 
+
+                                // 1M Accumulate/Close
+                                let cur1M = { ...newHist[s.c].current1M };
+                                
+                                if (now - cur1M.startTime >= 60000) {
+                                    newHist[s.c]['1M'] = [...newHist[s.c]['1M'], cur1M].slice(-100);
+                                    cur1M = { o: s.price, h: s.price, l: s.price, c: s.price, v: s.lastVol, startTime: now };
                                 } else {
-                                    newH[s.c] = [...newH[s.c], { o: s.price, h: s.price, l: s.price, c: s.price, v: 0, time: Date.now() }].slice(-100);
+                                    cur1M.h = Math.max(cur1M.h, s.price);
+                                    cur1M.l = Math.min(cur1M.l, s.price);
+                                    cur1M.c = s.price;
+                                    cur1M.v += s.lastVol;
                                 }
+                                newHist[s.c].current1M = cur1M;
                             });
-                            return newH;
+                            return newHist;
                         });
-                        return updated;
+
+                        return updatedStocks;
                     });
                 }, 1000);
                 return () => clearInterval(interval);
-            }, []);
+            }, [selCode]); // Include selCode for flash logic
 
-            // --- MATCHING ENGINE ---
+            // --- MATCHING & P/L ENGINE (Unchanged but crucial for netLiq) ---
             useEffect(() => {
                 setOrders(prev => {
                     let dirty = false;
@@ -295,12 +513,13 @@
                         const s = stocks.find(x => x.c === o.code);
                         if(!s) return o;
                         
-                        // Check fill
+                        // Fill logic is simplified for demo
                         const fill = (o.side === 'BUY' && s.price <= o.price) || (o.side === 'SELL' && s.price >= o.price);
                         if (fill || o.type === 'MARKET') {
                             dirty = true;
-                            executeTrade(o, s.price);
-                            return { ...o, status: 'FILLED', fillPrice: s.price };
+                            const fillPrice = o.type === 'MARKET' ? s.price : (o.side === 'BUY' ? Math.min(o.price, s.price) : Math.max(o.price, s.price));
+                            executeTrade(o, fillPrice);
+                            return { ...o, status: 'FILLED', fillPrice: fillPrice };
                         }
                         return o;
                     });
@@ -308,41 +527,102 @@
                 });
             }, [stocks]);
 
-            // --- P/L CALC ---
             useEffect(() => {
+                let uplTotal = 0;
+
                 setPos(prev => prev.map(p => {
                     const s = stocks.find(x => x.c === p.code);
                     if(!s) return p;
-                    const mkt = Math.abs(p.qty) * s.price;
-                    const upl = p.qty > 0 ? (s.price - p.avg) * p.qty : (p.avg - s.price) * Math.abs(p.qty);
-                    return { ...p, mark: s.price, mktVal: mkt, upl, uplPct: (upl/(p.avg*Math.abs(p.qty)))*100 };
-                }));
-            }, [stocks]);
+                    
+                    const absQty = Math.abs(p.qty);
+                    const upl = p.qty > 0 ? (s.price - p.avg) * p.qty : (p.avg - s.price) * absQty;
+                    uplTotal += upl;
 
-            useEffect(() => {
-                const uplTotal = pos.reduce((a,b) => a + b.upl, 0);
-                setAccount(a => ({ ...a, equity: a.cash + uplTotal + pos.reduce((acc,p) => acc + (p.qty > 0 ? p.mktVal : 0), 0) })); // Simplified Equity
-            }, [pos, account.cash]);
+                    return { ...p, mark: s.price, mktVal: absQty * s.price, upl, uplPct: (upl / (p.avg * absQty)) * 100 };
+                }));
+
+                // Net Liq and Day P/L logic is CRITICAL for the user's request
+                setAccount(a => {
+                    const newNetLiq = a.cash + uplTotal; 
+                    const dayPL = newNetLiq - INITIAL_CASH; 
+                    return { ...a, uplTotal, netLiq: newNetLiq, dayPL };
+                });
+
+            }, [stocks, account.cash]); // Depend on account.cash to ensure accurate netLiq updates after trades
 
             // --- ACTIONS ---
             const executeTrade = (ord, price) => {
-                const qty = parseInt(ord.qty);
-                const amt = price * qty;
-                const comm = Math.max(1, qty * 0.005); // Commission
-                
+                const tradeQty = parseInt(ord.qty);
+                const tradeAmt = price * tradeQty;
+                const comm = Math.max(1, tradeQty * 0.005); 
+                const isBuy = ord.side === 'BUY';
+                const transactionCostOrProceeds = isBuy ? -tradeAmt - comm : tradeAmt - comm;
+                let realizedPL = 0;
+
                 setPos(prev => {
-                    const ex = prev.find(p => p.code === ord.code);
-                    if(!ex) {
-                        return [...prev, { code: ord.code, qty: ord.side==='BUY'?qty:-qty, avg: price, mark: price, mktVal: amt, upl: -comm, uplPct: 0 }];
-                    } else {
-                        const newQty = ex.qty + (ord.side==='BUY'?qty:-qty);
-                        if (newQty === 0) return prev.filter(p => p.code !== ord.code);
-                        // Weighted Avg Cost logic skipped for brevity, using last price for simplicity in this demo
-                        return prev.map(p => p.code === ord.code ? { ...p, qty: newQty } : p);
+                    const exIndex = prev.findIndex(p => p.code === ord.code);
+                    let nextPos = [...prev];
+                    
+                    if (exIndex !== -1) {
+                        const ex = nextPos[exIndex];
+                        const exQty = ex.qty;
+                        const isClosing = (isBuy && exQty < 0) || (!isBuy && exQty > 0);
+
+                        if (isClosing) {
+                            const closeQty = Math.min(tradeQty, Math.abs(exQty));
+                            if (exQty > 0) { // Closing Long with SELL
+                                realizedPL = (price - ex.avg) * closeQty;
+                            } else { // Closing Short with BUY
+                                realizedPL = (ex.avg - price) * closeQty;
+                            }
+
+                            const remainingQty = exQty + (isBuy ? closeQty : -closeQty);
+
+                            if (Math.abs(remainingQty) < 1) {
+                                nextPos = prev.filter((p, i) => i !== exIndex);
+                            } else {
+                                // Remaining is a new position on the opposite side (reversal)
+                                const newOpenQty = Math.abs(remainingQty);
+                                const newAvg = price; 
+                                nextPos = prev.filter((p, i) => i !== exIndex);
+                                nextPos.push({ 
+                                    code: ord.code, 
+                                    qty: remainingQty, // The sign is correct
+                                    avg: newAvg, 
+                                    mark: price, 
+                                    mktVal: newOpenQty * price, 
+                                    upl: 0, 
+                                    uplPct: 0 
+                                });
+                            }
+                        } else {
+                            // Adding to existing position (same side)
+                            const newTotalQty = exQty + (isBuy ? tradeQty : -tradeQty);
+                            const newAvg = ((ex.avg * Math.abs(exQty)) + (price * tradeQty)) / Math.abs(newTotalQty);
+                            nextPos[exIndex] = { ...ex, qty: newTotalQty, avg: newAvg };
+                        }
+                    } else if (tradeQty > 0) {
+                        // New position
+                        nextPos.push({ 
+                            code: ord.code, 
+                            qty: isBuy ? tradeQty : -tradeQty, 
+                            avg: price, 
+                            mark: price, 
+                            mktVal: tradeAmt, 
+                            upl: -comm, 
+                            uplPct: 0 
+                        });
                     }
+                    return nextPos;
                 });
-                setAccount(a => ({ ...a, cash: a.cash + (ord.side==='BUY' ? -amt : amt) - comm }));
-                notify(`FILLED: ${ord.side} ${qty} ${ord.code} @ ${price}`);
+
+                // Crucial: Cash update includes realized P/L
+                setAccount(a => ({ 
+                    ...a, 
+                    cash: a.cash + transactionCostOrProceeds + realizedPL, 
+                    realized: a.realized + realizedPL 
+                }));
+                notify(`成交: ${ord.side} ${tradeQty} ${ord.code} @ ${price.toFixed(2)} (實現盈虧: ${realizedPL.toFixed(2)})`);
             };
 
             const placeOrder = (e) => {
@@ -350,39 +630,32 @@
                 const s = stocks.find(x => x.c === selCode);
                 const price = order.type === 'MARKET' ? s.price : parseFloat(order.price);
                 const qty = parseInt(order.qty);
+                const currentCash = account.cash;
                 
-                if(!qty || qty <= 0) return notify("Invalid Qty", "error");
-                if(order.type==='LIMIT' && !price) return notify("Invalid Price", "error");
+                if(!qty || qty <= 0) return notify("無效數量", "error");
+                if(order.type==='LIMIT' && (!price || price <= 0)) return notify("無效價格", "error");
 
-                // Buying Power Check
-                if (order.side === 'BUY' && (price * qty) > account.cash) return notify("Insufficient Buying Power", "error");
+                const requiredFunds = order.side === 'BUY' ? price * qty : 0; 
+                if (order.side === 'BUY' && requiredFunds > currentCash) return notify("購買力不足 (現金不足)", "error");
 
-                const newOrd = {
-                    id: Math.random().toString(36).substr(2,9),
-                    time: new Date().toLocaleTimeString(),
-                    code: selCode,
-                    ...order,
-                    price,
-                    status: 'PENDING',
-                    fillPrice: 0
-                };
+                const newOrd = { id: Math.random().toString(36).substr(2,9), time: new Date().toLocaleTimeString(), code: selCode, ...order, price, status: 'PENDING', fillPrice: 0 };
 
-                // Immediate check for Market or matching Limit
                 const fill = order.type === 'MARKET' || (order.side==='BUY' && s.price <= price) || (order.side==='SELL' && s.price >= price);
                 
                 if ((order.tif === 'IOC' || order.tif === 'FOK') && !fill) {
-                    notify("Order Cancelled (No Liquidity)", "info");
-                } else if (fill && order.type === 'MARKET') {
-                    executeTrade(newOrd, s.price);
+                    notify("訂單已取消 (缺乏流動性)", "info");
+                } else if (fill) {
+                    const fillPrice = order.type === 'MARKET' ? s.price : (order.side === 'BUY' ? Math.min(price, s.price) : Math.max(price, s.price));
+                    executeTrade(newOrd, fillPrice);
                 } else {
                     setOrders([newOrd, ...orders]);
-                    notify("Order Submitted");
+                    notify("訂單已提交");
                 }
             };
 
             const cancelOrder = (id) => {
                 setOrders(prev => prev.map(o => o.id === id && o.status === 'PENDING' ? { ...o, status: 'CXLD' } : o));
-                notify("Order Cancelled");
+                notify("訂單已取消");
             };
 
             const notify = (msg, type='success') => {
@@ -394,8 +667,20 @@
             const selStock = stocks.find(s => s.c === selCode) || stocks[0];
             const activeOrders = orders.filter(o => o.status === 'PENDING');
             const currentPos = pos.find(p => p.code === selCode);
+            
+            let displayData = [];
+            if (history[selCode]) {
+                if (chartInterval === '1S') {
+                    displayData = history[selCode]['1S'];
+                } else {
+                    displayData = [...history[selCode]['1M'], history[selCode].current1M];
+                }
+            }
 
-            // Smart Qty Helper
+            const tradePrice = order.type === 'MARKET' ? selStock.price : parseFloat(order.price) || selStock.price;
+            const tradeQty = parseInt(order.qty) || 0;
+            const estimatedValue = tradePrice * tradeQty;
+
             const setQtyByPct = (pct) => {
                 const s = stocks.find(x => x.c === selCode);
                 const p = order.price || s.price;
@@ -403,17 +688,60 @@
                 setOrder(prev => ({ ...prev, qty: Math.floor(max * pct) }));
             };
 
-            // Simulated Depth
-            const DepthRow = ({ price, size, type }) => {
-                const w = Math.min((size / 1000) * 100, 100);
+            // Simulated Depth & Bid/Ask Logic
+            const MaxDepthSize = 4000;
+            const generateDepth = (basePrice, isBid) => {
+                const depth = [];
+                for(let i=1; i<=10; i++) {
+                    const price = isBid ? basePrice - i * 0.01 : basePrice + i * 0.01;
+                    const size = Math.floor(Math.random() * 1000) + 100 * (11 - i); 
+                    depth.push({ price: parseFloat(price.toFixed(2)), size: size });
+                }
+                return depth;
+            };
+            const bids = generateDepth(selStock.price, true).sort((a,b) => b.price - a.price).slice(0, 5);
+            const asks = generateDepth(selStock.price, false).sort((a,b) => a.price - b.price).slice(0, 5);
+
+
+            // --- DOM Row Component (Refined) ---
+            const DOMRow = ({ price, size, type }) => {
+                const w = Math.min((size / MaxDepthSize) * 100, 100);
+                const isBid = type === 'bid';
+                const clickAction = () => {
+                    setOrder(p => ({
+                        ...p, 
+                        price: price.toFixed(2), 
+                        type: 'LIMIT', 
+                        side: isBid ? 'BUY' : 'SELL' // Clicking Bid for Buy, Ask for Sell
+                    }))
+                };
+
                 return (
-                    <div className="flex justify-between text-xs font-mono relative py-0.5 px-1 hover:bg-gray-800 cursor-pointer" onClick={() => setOrder(p => ({...p, price: price.toFixed(2), type: 'LIMIT'}))}>
-                        <div className={`absolute top-0 bottom-0 opacity-20 ${type==='bid'?'right-1/2 bg-green-500 origin-right':'left-1/2 bg-red-500 origin-left'}`} style={{width: `${w}%`}}></div>
-                        <span className="w-1/2 text-right pr-2 text-gray-400">{type==='bid'?size:price.toFixed(2)}</span>
-                        <span className={`w-1/2 pl-2 ${type==='bid'?'text-green-400':'text-gray-400'}`}>{type==='bid'?price.toFixed(2):size}</span>
+                    <div className="dom-row flex justify-between text-[11px] font-mono relative h-5 items-center cursor-pointer hover:bg-gray-700/50" 
+                         onClick={clickAction}>
+                        
+                        {isBid ? (
+                            <>
+                                {/* Bid Bar (Right Aligned) */}
+                                <div className="absolute top-0 bottom-0 right-0 bg-green-500/20" style={{ width: `${w}%` }}></div>
+                                <span className="z-10 w-1/3 text-left pl-2 text-gray-400">{size.toLocaleString()}</span>
+                                <span className="z-10 w-2/3 text-right pr-2 text-green-400 font-bold">{price.toFixed(2)}</span>
+                            </>
+                        ) : (
+                            <>
+                                {/* Ask Bar (Left Aligned) */}
+                                <div className="absolute top-0 bottom-0 left-0 bg-red-500/20" style={{ width: `${w}%` }}></div>
+                                <span className="z-10 w-2/3 text-left pl-2 text-red-400 font-bold">{price.toFixed(2)}</span>
+                                <span className="z-10 w-1/3 text-right pr-2 text-gray-400">{size.toLocaleString()}</span>
+                            </>
+                        )}
                     </div>
                 );
             };
+
+            const spread = asks.length > 0 && bids.length > 0 ? (asks[0].price - bids[0].price).toFixed(2) : 'N/A';
+            const tickFlashClass = lastTradeDir === 'BUY' ? 'flash-green' : lastTradeDir === 'SELL' ? 'flash-red' : '';
+
 
             return (
                 <div className="flex flex-col h-screen text-xs md:text-sm font-sans">
@@ -421,25 +749,25 @@
                     <header className="bg-gray-900 border-b border-gray-800 h-10 flex items-center justify-between px-3 shrink-0">
                         <div className="flex items-center gap-3">
                             <Icons.Settings className="text-blue-500"/>
-                            <span className="font-bold text-gray-100 tracking-wide">PRO<span className="text-blue-500">TRADER</span> <span className="text-gray-600 text-[10px]">MLB DMA</span></span>
+                            <span className="font-bold text-gray-100 tracking-wide">PRO<span className="text-blue-500">TRADER</span> <span className="text-gray-600 text-[10px]">Enhanced</span></span>
                         </div>
                         <div className="flex gap-6 font-mono-num text-xs">
                             <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
-                                <span className="text-gray-500 uppercase text-[10px]">Net Liq</span>
-                                <span className="font-bold text-gray-200">{fmtUSD(account.equity)}</span>
+                                <span className="text-gray-500 uppercase text-[10px]">Net Liq (淨資產)</span>
+                                <span className="font-bold text-gray-200">{fmtUSD(account.netLiq)}</span>
                             </div>
                             <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
-                                <span className="text-gray-500 uppercase text-[10px]">Day P/L</span>
-                                <span className={`font-bold ${col(account.equity - INITIAL_CASH)}`}>{fmtUSD(account.equity - INITIAL_CASH)}</span>
+                                <span className="text-gray-500 uppercase text-[10px]">Day P/L (日盈虧)</span>
+                                <span className={`font-bold ${col(account.dayPL)}`}>{fmtUSD(account.dayPL)}</span>
                             </div>
                             <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
-                                <span className="text-gray-500 uppercase text-[10px]">Buying Power</span>
+                                <span className="text-gray-500 uppercase text-[10px]">Cash (現金)</span>
                                 <span className="font-bold text-blue-400">{fmtUSD(account.cash)}</span>
                             </div>
                         </div>
                         <div className="flex items-center gap-2 text-[10px] text-gray-500">
                             <Icons.Wifi className="text-green-500" size={12}/>
-                            <span>Connected</span>
+                            <span>連線中</span>
                             <span className="font-mono text-gray-400">{time.toLocaleTimeString()}</span>
                         </div>
                     </header>
@@ -452,7 +780,7 @@
                             <div className="p-2 border-b border-gray-800">
                                 <div className="relative">
                                     <Icons.Search className="absolute left-2 top-2 text-gray-500"/>
-                                    <input className="w-full bg-gray-950 border border-gray-700 rounded py-1 pl-7 pr-2 text-xs text-gray-300 focus:border-blue-500 outline-none" placeholder="Symbol" />
+                                    <input className="w-full bg-gray-950 border border-gray-700 rounded py-1 pl-7 pr-2 text-xs text-gray-300 focus:border-blue-500 outline-none" placeholder="輸入代碼" />
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto">
@@ -471,84 +799,79 @@
                             </div>
                         </div>
 
-                        {/* 2. CHART & DOM (Center) */}
+                        {/* 2. CHART & DATA PANELS (Center) */}
                         <div className="flex-1 flex flex-col min-w-0 border-r border-gray-800">
-                            {/* Chart Header */}
+                            {/* Chart Header - Added Tick Flash Class */}
                             <div className="h-12 border-b border-gray-800 flex justify-between items-center px-4 bg-gray-900/30">
                                 <div>
                                     <span className="text-xl font-bold text-white mr-2">{selStock.c}</span>
                                     <span className="text-xs text-gray-500 mr-4">{selStock.n}</span>
-                                    <span className={`text-lg font-mono-num font-bold ${col(selStock.change)}`}>{selStock.price.toFixed(2)}</span>
+                                    {/* Price with Tick Flash */}
+                                    <span ref={priceFlashRef} className={`text-lg font-mono-num font-bold transition-all ${col(selStock.change)} ${tickFlashClass}`}>{selStock.price.toFixed(2)}</span>
                                     <span className={`ml-2 text-xs font-mono-num ${col(selStock.change)}`}>{fmtPct(selStock.pct)}</span>
                                 </div>
-                                <div className="flex gap-4 text-xs font-mono text-gray-500">
-                                    <div>H: <span className="text-gray-300">{selStock.high.toFixed(2)}</span></div>
-                                    <div>L: <span className="text-gray-300">{selStock.low.toFixed(2)}</span></div>
-                                    <div>V: <span className="text-gray-300">{selStock.vol.toLocaleString()}</span></div>
+                                
+                                <div className="flex items-center gap-4">
+                                    {/* Timeframe Selector */}
+                                    <div className="flex bg-gray-800 rounded p-0.5 border border-gray-700">
+                                        <button onClick={()=>setChartInterval('1S')} className={`px-2 py-0.5 text-[10px] rounded font-bold ${chartInterval==='1S'?'bg-blue-600 text-white':'text-gray-400 hover:text-gray-300'}`}>1S</button>
+                                        <button onClick={()=>setChartInterval('1M')} className={`px-2 py-0.5 text-[10px] rounded font-bold ${chartInterval==='1M'?'bg-blue-600 text-white':'text-gray-400 hover:text-gray-300'}`}>1M</button>
+                                    </div>
+                                    
+                                    <div className="flex gap-4 text-xs font-mono text-gray-500 border-l border-gray-700 pl-4">
+                                        <div>高: <span className="text-gray-300">{selStock.high.toFixed(2)}</span></div>
+                                        <div>低: <span className="text-gray-300">{selStock.low.toFixed(2)}</span></div>
+                                        <div>量: <span className="text-gray-300">{selStock.vol.toLocaleString()}</span></div>
+                                    </div>
                                 </div>
                             </div>
                             
                             {/* Chart Container */}
                             <div className="flex-1 relative bg-[#0b0e11]">
-                                <CandlestickChart data={history[selCode]} />
+                                <CandlestickChart data={displayData} interval={chartInterval} />
                             </div>
 
-                            {/* Bottom Split: Positions & Orders */}
+                            {/* Bottom Split: Positions & Orders (Unchanged) */}
                             <div className="h-1/3 min-h-[200px] border-t border-gray-800 flex">
-                                {/* Positions Col */}
                                 <div className="flex-1 border-r border-gray-800 flex flex-col bg-gray-900/20">
                                     <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2">
-                                        <Icons.Briefcase size={12}/> Positions
+                                        <Icons.Briefcase size={12}/> 部位 (Positions)
                                     </div>
                                     <div className="flex-1 overflow-y-auto">
                                         <table className="w-full text-left text-[11px]">
                                             <thead className="text-gray-500 sticky top-0 bg-[#0b0e11]">
-                                                <tr>
-                                                    <th className="pl-3 py-1">Sym</th>
-                                                    <th className="text-right">Qty</th>
-                                                    <th className="text-right">Avg</th>
-                                                    <th className="text-right">Last</th>
-                                                    <th className="text-right pr-3">P/L</th>
-                                                </tr>
+                                                <tr><th className="pl-3 py-1">代碼</th><th className="text-right">數量</th><th className="text-right">成本</th><th className="text-right">現價</th><th className="text-right pr-3">未實現P/L</th></tr>
                                             </thead>
                                             <tbody className="font-mono-num divide-y divide-gray-800/50">
                                                 {pos.map(p => (
                                                     <tr key={p.code} className="hover:bg-gray-800/30 cursor-pointer" onClick={() => setSelCode(p.code)}>
                                                         <td className="pl-3 py-1 text-gray-300 font-bold">{p.code}</td>
-                                                        <td className={`text-right ${p.qty>0?'text-blue-400':'text-purple-400'}`}>{p.qty}</td>
+                                                        <td className={`text-right ${p.qty>0?'text-green-400':'text-red-400'}`}>{p.qty}</td>
                                                         <td className="text-right text-gray-500">{p.avg.toFixed(2)}</td>
                                                         <td className="text-right text-gray-300">{p.mark.toFixed(2)}</td>
                                                         <td className={`text-right pr-3 ${col(p.upl)}`}>{p.upl.toFixed(2)}</td>
                                                     </tr>
                                                 ))}
-                                                {pos.length === 0 && <tr><td colSpan="5" className="text-center py-4 text-gray-600 italic">Flat</td></tr>}
+                                                {pos.length === 0 && <tr><td colSpan="5" className="text-center py-4 text-gray-600 italic">無持有部位</td></tr>}
                                             </tbody>
                                         </table>
                                     </div>
                                 </div>
 
-                                {/* Active Orders Col */}
                                 <div className="flex-1 flex flex-col bg-gray-900/20">
                                     <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2">
-                                        <Icons.List size={12}/> Working Orders
+                                        委託單 (Working Orders)
                                     </div>
                                     <div className="flex-1 overflow-y-auto">
                                         <table className="w-full text-left text-[11px]">
                                             <thead className="text-gray-500 sticky top-0 bg-[#0b0e11]">
-                                                <tr>
-                                                    <th className="pl-3 py-1">Time</th>
-                                                    <th>Side</th>
-                                                    <th>Sym</th>
-                                                    <th className="text-right">Px</th>
-                                                    <th className="text-right">Qty</th>
-                                                    <th className="text-center pr-2">cx</th>
-                                                </tr>
+                                                <tr><th>時間</th><th>方向</th><th>代碼</th><th className="text-right">價格</th><th className="text-right">數量</th><th className="text-center pr-2">取消</th></tr>
                                             </thead>
                                             <tbody className="font-mono-num divide-y divide-gray-800/50">
                                                 {activeOrders.map(o => (
                                                     <tr key={o.id} className="hover:bg-gray-800/30">
                                                         <td className="pl-3 py-1 text-gray-500">{o.time.split(' ')[0]}</td>
-                                                        <td className={o.side==='BUY'?'text-green-500':'text-red-500'}>{o.side}</td>
+                                                        <td className={o.side==='BUY'?'text-green-500':'text-red-500'}>{o.side==='BUY'?'買':'賣'}</td>
                                                         <td className="text-gray-300">{o.code}</td>
                                                         <td className="text-right">{o.type==='MARKET'?'MKT':o.price.toFixed(2)}</td>
                                                         <td className="text-right text-white">{o.qty}</td>
@@ -567,104 +890,113 @@
                         {/* 3. ORDER ENTRY & DEPTH (Right - Fixed Width) */}
                         <div className="w-72 flex flex-col bg-gray-900/80 border-l border-gray-800">
                             
-                            {/* Level 2 DOM */}
-                            <div className="flex-1 flex flex-col overflow-hidden border-b border-gray-800">
-                                <div className="px-2 py-1 bg-gray-950 text-[10px] text-gray-500 font-bold flex justify-between">
-                                    <span>BID SIZE</span><span>PRICE</span><span>ASK SIZE</span>
+                            {/* Level 2 DOM (Optimized) */}
+                            <div className="flex-1 flex flex-col overflow-hidden border-b border-gray-800 dom-container">
+                                <div className="px-2 py-1 bg-gray-950 text-[10px] text-gray-500 font-bold flex justify-between uppercase">
+                                    <span>Ask (賣方)</span><span className="text-right">Size</span>
                                 </div>
-                                <div className="flex-1 overflow-y-auto bg-[#0b0e11] flex flex-col justify-center relative">
+                                <div className="flex-1 overflow-y-auto bg-[#0b0e11] flex flex-col-reverse justify-end relative">
                                     {/* Asks (Top) */}
-                                    {[4,3,2,1,0].map(i => {
-                                        const p = selStock.price + (i+1)*0.01;
-                                        const sz = Math.floor(Math.random()*2000)+100;
-                                        return <DepthRow key={`ask${i}`} price={p} size={sz} type="ask"/>
-                                    })}
+                                    {asks.slice().reverse().map((a, i) => <DOMRow key={`ask${i}`} price={a.price} size={a.size} type="ask"/>)}
                                     
-                                    {/* Spread */}
-                                    <div className="py-1 bg-gray-800 text-center font-bold text-white border-y border-gray-700 text-sm">{selStock.price.toFixed(2)}</div>
-                                    
+                                    {/* Spread - Highlighted for visibility */}
+                                    <div className="py-1 bg-gray-700/50 text-center font-bold text-white border-y border-gray-700 text-sm font-mono-num">
+                                        價差 (SPREAD): <span className={parseFloat(spread)>0.01 ? 'text-yellow-400' : 'text-green-400'}>{spread}</span>
+                                        {/* Optional: Add Last Trade Indicator */}
+                                        {lastTradeDir && (
+                                            <span className={`text-[10px] ml-2 font-normal ${lastTradeDir==='BUY'?'text-green-500':'text-red-500'}`}>
+                                                ({lastTradeDir==='BUY'?'↑':'↓'})
+                                            </span>
+                                        )}
+                                    </div>
+
                                     {/* Bids (Bottom) */}
-                                    {[0,1,2,3,4].map(i => {
-                                        const p = selStock.price - (i+1)*0.01;
-                                        const sz = Math.floor(Math.random()*2000)+100;
-                                        return <DepthRow key={`bid${i}`} price={p} size={sz} type="bid"/>
-                                    })}
+                                    {bids.map((b, i) => <DOMRow key={`bid${i}`} price={b.price} size={b.size} type="bid"/>)}
+                                    
+                                </div>
+                                <div className="px-2 py-1 bg-gray-950 text-[10px] text-gray-500 font-bold flex justify-between uppercase border-t border-gray-800">
+                                    <span>Size</span><span className="text-right">Bid (買方)</span>
                                 </div>
                             </div>
 
-                            {/* Order Entry Form */}
+                            {/* Order Entry Form (Optimized) */}
                             <div className="p-3 bg-gray-900">
                                 <div className="flex justify-between mb-2 text-xs">
-                                    <span className="font-bold text-gray-300">Order Ticket</span>
-                                    {currentPos && <span className={currentPos.qty>0?'text-blue-400':'text-purple-400'}>{currentPos.qty} SHRS</span>}
+                                    <span className="font-bold text-gray-300">下單面板</span>
+                                    {currentPos && <span className={currentPos.qty>0?'text-green-400':'text-red-400'}>{currentPos.qty} 股</span>}
                                 </div>
                                 
-                                <form onSubmit={placeOrder} className="space-y-2">
+                                <form onSubmit={placeOrder} className="space-y-3">
+                                    {/* BUY/SELL Buttons (Large) */}
                                     <div className="flex gap-1 p-1 bg-black rounded border border-gray-700">
-                                        <button type="button" onClick={()=>setOrder(p=>({...p, side:'BUY'}))} className={`flex-1 py-1 text-xs font-bold rounded ${order.side==='BUY'?'bg-green-600 text-white':'text-gray-500 hover:text-gray-300'}`}>BUY</button>
-                                        <button type="button" onClick={()=>setOrder(p=>({...p, side:'SELL'}))} className={`flex-1 py-1 text-xs font-bold rounded ${order.side==='SELL'?'bg-red-600 text-white':'text-gray-500 hover:text-gray-300'}`}>SELL</button>
+                                        <button type="button" onClick={()=>setOrder(p=>({...p, side:'BUY'}))} className={`flex-1 py-2 text-sm font-bold rounded shadow-md transition-colors ${order.side==='BUY'?'bg-green-600 text-white hover:bg-green-500':'text-gray-500 bg-gray-800 hover:text-gray-300'}`}>買入 (BUY)</button>
+                                        <button type="button" onClick={()=>setOrder(p=>({...p, side:'SELL'}))} className={`flex-1 py-2 text-sm font-bold rounded shadow-md transition-colors ${order.side==='SELL'?'bg-red-600 text-white hover:bg-red-500':'text-gray-500 bg-gray-800 hover:text-gray-300'}`}>賣出 (SELL)</button>
                                     </div>
 
                                     <div className="grid grid-cols-2 gap-2">
                                         <div className="space-y-1">
-                                            <label className="text-[10px] text-gray-500">Shares</label>
-                                            <input type="number" value={order.qty} onChange={e=>setOrder(p=>({...p, qty:e.target.value}))} className="w-full bg-black border border-gray-700 rounded px-2 py-1 text-right text-white text-sm outline-none focus:border-blue-500" />
+                                            <label className="text-[10px] text-gray-500">數量 (Shares)</label>
+                                            <input type="number" value={order.qty} onChange={e=>setOrder(p=>({...p, qty:e.target.value}))} className="w-full bg-black border border-gray-700 rounded px-2 py-1.5 text-right text-white text-sm outline-none focus:border-blue-500 font-mono-num" />
                                         </div>
                                         <div className="space-y-1">
-                                            <label className="text-[10px] text-gray-500">Price</label>
-                                            <input type="number" disabled={order.type==='MARKET'} value={order.price} onChange={e=>setOrder(p=>({...p, price:e.target.value}))} className="w-full bg-black border border-gray-700 rounded px-2 py-1 text-right text-white text-sm outline-none focus:border-blue-500 disabled:opacity-50" placeholder={order.type==='MARKET'?'MKT':''} />
+                                            <label className="text-[10px] text-gray-500">價格 (Price)</label>
+                                            <input type="number" step="0.01" disabled={order.type==='MARKET'} value={order.price} onChange={e=>setOrder(p=>({...p, price:e.target.value}))} className="w-full bg-black border border-gray-700 rounded px-2 py-1.5 text-right text-white text-sm outline-none focus:border-blue-500 disabled:opacity-50 font-mono-num" placeholder={order.type==='MARKET'?'MKT':''} />
                                         </div>
+                                    </div>
+                                    
+                                    {/* Estimated Value */}
+                                    <div className="text-center text-[11px] py-1 px-2 bg-gray-800 rounded border border-gray-700 font-mono-num text-gray-400">
+                                        預估價值: <span className="font-bold text-white">{fmtUSD(estimatedValue)}</span>
                                     </div>
 
                                     {/* Quick Size Buttons */}
                                     <div className="flex gap-1">
                                         {[0.25, 0.5, 1].map(pct => (
-                                            <button key={pct} type="button" onClick={()=>setQtyByPct(pct)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-[10px] text-gray-400 rounded py-0.5 border border-gray-700">{pct*100}%</button>
+                                            <button key={pct} type="button" onClick={()=>setQtyByPct(pct)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-[10px] text-gray-400 rounded py-1 border border-gray-700">{pct*100}% 現金</button>
                                         ))}
                                     </div>
 
                                     <div className="flex gap-2">
-                                        <select value={order.type} onChange={e=>setOrder(p=>({...p, type:e.target.value}))} className="flex-1 bg-gray-800 border border-gray-700 rounded text-xs text-white px-1 py-1 outline-none">
-                                            <option value="LIMIT">LMT</option>
-                                            <option value="MARKET">MKT</option>
+                                        <select value={order.type} onChange={e=>setOrder(p=>({...p, type:e.target.value}))} className="flex-1 bg-gray-800 border border-gray-700 rounded text-xs text-white px-2 py-1.5 outline-none">
+                                            <option value="LIMIT">限價單 (LMT)</option>
+                                            <option value="MARKET">市價單 (MKT)</option>
                                         </select>
-                                        <select value={order.tif} onChange={e=>setOrder(p=>({...p, tif:e.target.value}))} className="flex-1 bg-gray-800 border border-gray-700 rounded text-xs text-white px-1 py-1 outline-none">
-                                            <option value="DAY">DAY</option>
-                                            <option value="IOC">IOC</option>
-                                            <option value="FOK">FOK</option>
+                                        <select value={order.tif} onChange={e=>setOrder(p=>({...p, tif:e.target.value}))} className="flex-1 bg-gray-800 border border-gray-700 rounded text-xs text-white px-2 py-1.5 outline-none">
+                                            <option value="DAY">當日有效 (DAY)</option>
+                                            <option value="IOC">立即或取消 (IOC)</option>
+                                            <option value="FOK">全部成交或取消 (FOK)</option>
                                         </select>
                                     </div>
 
-                                    <button type="submit" className={`w-full py-3 rounded font-bold text-sm text-white shadow-lg mt-2 ${order.side==='BUY'?'bg-green-700 hover:bg-green-600':'bg-red-700 hover:bg-red-600'}`}>
-                                        {order.side}
+                                    <button type="submit" className={`w-full py-2.5 rounded font-bold text-sm text-white shadow-xl mt-2 ${order.side==='BUY'?'bg-green-700 hover:bg-green-600':'bg-red-700 hover:bg-red-600'}`}>
+                                        確認 {order.side==='BUY'?'買入':'賣出'} 訂單
                                     </button>
                                 </form>
                             </div>
                         </div>
                     </div>
 
-                    {/* AI BTN */}
+                    {/* AI BTN & MODAL (Unchanged) */}
                     <button onClick={()=>setAiOpen(true)} className="fixed bottom-4 right-4 p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-xl border border-indigo-400/30 z-50 transition-all hover:scale-105">
                         <Icons.Sparkles/>
                     </button>
 
-                    {/* AI MODAL */}
                     {aiOpen && (
                         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
                             <div className="bg-gray-900 border border-gray-700 w-96 rounded-lg shadow-2xl overflow-hidden">
                                 <div className="bg-gray-800 p-3 flex justify-between items-center border-b border-gray-700">
-                                    <div className="flex items-center gap-2 text-white font-bold"><Icons.Sparkles className="text-indigo-400"/> Gemini Analyst</div>
+                                    <div className="flex items-center gap-2 text-white font-bold"><Icons.Sparkles className="text-indigo-400"/> 雙子座分析師</div>
                                     <button onClick={()=>setAiOpen(false)} className="text-gray-500 hover:text-white"><Icons.X/></button>
                                 </div>
                                 <div className="p-4 h-64 overflow-y-auto text-sm text-gray-300">
-                                    <p className="mb-2">Analyzing <strong>{selStock.n} ({selStock.c})</strong>...</p>
+                                    <p className="mb-2">正在分析 <strong>{selStock.n} ({selStock.c})</strong>...</p>
                                     <div className="p-3 bg-indigo-900/20 border border-indigo-500/30 rounded text-indigo-200 text-xs leading-relaxed">
-                                        System detects increasing volume near the support level of ${selStock.low}. Momentum indicators suggest a potential breakout if resistance at ${selStock.high} is cleared. (Mock Data)
+                                        MACD 指標目前處於 <span className="text-blue-400">零線上方</span> 且 <span className="text-orange-400">MACD 線剛向上穿越 Signal 線</span>，這在技術上發出了 **買入訊號**，表明短期動量強於長期動量。（模擬分析）
                                     </div>
                                 </div>
                                 <div className="p-3 bg-gray-800 border-t border-gray-700">
                                     <div className="relative">
-                                        <input type="text" className="w-full bg-gray-900 border border-gray-600 rounded pl-3 pr-8 py-2 text-xs text-white focus:border-indigo-500 outline-none" placeholder="Ask about market trends..." />
+                                        <input type="text" className="w-full bg-gray-900 border border-gray-600 rounded pl-3 pr-8 py-2 text-xs text-white focus:border-indigo-500 outline-none" placeholder="詢問市場趨勢..." />
                                         <Icons.Send size={14} className="absolute right-2 top-2.5 text-gray-500"/>
                                     </div>
                                 </div>
@@ -674,7 +1006,7 @@
 
                     {/* TOAST */}
                     {msg && (
-                        <div className={`fixed top-16 right-4 px-4 py-3 rounded bg-gray-800 border-l-4 shadow-2xl text-sm font-bold flex items-center gap-3 z-[100] ${msg.type==='error'?'border-red-500 text-red-400':'border-green-500 text-green-400'}`}>
+                        <div className={`fixed top-16 right-4 px-4 py-3 rounded bg-gray-800 border-l-4 shadow-2xl text-sm font-bold flex items-center gap-3 z-[100] ${msg.type==='error'?'border-red-500 text-red-400':(msg.type==='info'?'border-blue-500 text-blue-400':'border-green-500 text-green-400')}`}>
                             {msg.txt}
                         </div>
                     )}
