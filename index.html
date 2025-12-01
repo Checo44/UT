@@ -60,21 +60,47 @@
             X: (p) => <Icon {...p} d="M18 6L6 18 M6 6l12 12"/>,
             Sparkles: (p) => <Icon {...p} d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>,
             Settings: (p) => (
-                <Icon {...p} d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l-.15-.09a2 2 0 0 0 .73-2.73l.22-.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V4a2 2 0 0 0-2-2z">
+                <Icon {...p} d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V4a2 2 0 0 0-2-2z">
                     <circle cx="12" cy="12" r="3"/>
                 </Icon>
             ),
-            Wifi: (p) => <Icon {...p} d="M5 12.55a11 11 0 0 1 14.08 0 M1.42 9a16 16 0 0 1 21.16 0 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01"/>
+            Wifi: (p) => <Icon {...p} d="M5 12.55a11 11 0 0 1 14.08 0 M1.42 9a16 16 0 0 1 21.16 0 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01"/>,
+            Send: (p) => <Icon {...p} d="M22 2 11 13M22 2 15 22 11 13 2 9z"/>
         };
 
         // --- CONSTANTS & HELPERS ---
         const INITIAL_CASH = 100000.00;
-        const INITIAL_DATA = [
-            { c:'NYY', n:'NY Yankees', p:158.20 }, { c:'LAD', n:'LA Dodgers', p:185.50 },
-            { c:'BOS', n:'Boston Red Sox', p:95.40 }, { c:'ATL', n:'Atlanta Braves', p:120.10 },
-            { c:'HOU', n:'Houston Astros', p:110.35 }, { c:'PHI', n:'Phila Phillies', p:105.80 },
-            { c:'BAL', n:'Baltimore Orioles', p:88.20 }, { c:'CHC', n:'Chi Cubs', p:75.60 },
-            { c:'NYM', n:'NY Mets', p:92.15 }, { c:'SF', n:'SF Giants', p:82.30 },
+       const INITIAL_DATA = [
+            { c:'ARI', n:'Arizona Diamondbacks (亞利桑那響尾蛇)', p:98.50 },
+            { c:'ATL', n:'Atlanta Braves (亞特蘭大勇士)', p:155.10 },
+            { c:'BAL', n:'Baltimore Orioles (巴爾的摩金鶯)', p:112.90 },
+            { c:'BOS', n:'Boston Red Sox (波士頓紅襪)', p:130.40 },
+            { c:'CHC', n:'Chicago Cubs (芝加哥小熊)', p:105.70 },
+            { c:'CHW', n:'Chicago White Sox (芝加哥白襪)', p:78.60 },
+            { c:'CIN', n:'Cincinnati Reds (辛辛那提紅人)', p:92.30 },
+            { c:'CLE', n:'Cleveland Guardians (克里夫蘭守護者)', p:108.20 },
+            { c:'COL', n:'Colorado Rockies (科羅拉多洛磯)', p:75.10 },
+            { c:'DET', n:'Detroit Tigers (底特律老虎)', p:85.90 },
+            { c:'HOU', n:'Houston Astros (休士頓太空人)', p:168.00 },
+            { c:'KCR', n:'Kansas City Royals (堪薩斯市皇家)', p:80.40 },
+            { c:'LAA', n:'Los Angeles Angels (洛杉磯天使)', p:115.60 },
+            { c:'LAD', n:'Los Angeles Dodgers (洛杉磯道奇)', p:195.60 },
+            { c:'MIA', n:'Miami Marlins (邁阿密馬林魚)', p:90.70 },
+            { c:'MIL', n:'Milwaukee Brewers (密爾瓦基釀酒人)', p:120.20 },
+            { c:'MIN', n:'Minnesota Twins (明尼蘇達雙城)', p:102.30 },
+            { c:'NYM', n:'New York Mets (紐約大都會)', p:145.90 },
+            { c:'NYY', n:'New York Yankees (紐約洋基)', p:185.50 },
+            { c:'OAK', n:'Oakland Athletics (奧克蘭運動家)', p:65.20 },
+            { c:'PHI', n:'Philadelphia Phillies (費城費城人)', p:138.40 },
+            { c:'PIT', n:'Pittsburgh Pirates (匹茲堡海盜)', p:82.30 },
+            { c:'SDP', n:'San Diego Padres (聖地牙哥教士)', p:125.20 },
+            { c:'SEA', n:'Seattle Mariners (西雅圖水手)', p:100.90 },
+            { c:'SFG', n:'San Francisco Giants (舊金山巨人)', p:118.70 },
+            { c:'STL', n:'St. Louis Cardinals (聖路易紅雀)', p:130.50 },
+            { c:'TBR', n:'Tampa Bay Rays (坦帕灣光芒)', p:140.10 },
+            { c:'TEX', n:'Texas Rangers (德州遊騎兵)', p:150.30 },
+            { c:'TOR', n:'Toronto Blue Jays (多倫多藍鳥)', p:110.35 },
+            { c:'WAS', n:'Washington Nationals (華盛頓國民)', p:70.40 },
         ];
 
         const fmtUSD = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n);
@@ -90,10 +116,8 @@
             data.forEach((d, i) => {
                 const close = parseFloat(d[closeKey]);
                 if (i === 0 && prevEma === undefined) {
-                    // Simple average for the first point if no previous EMA provided
                     currentEma = close;
                 } else if (i === 0 && prevEma !== undefined) {
-                    // Use provided previous EMA as start (e.g., for continuous calculations)
                     currentEma = currentEma * (1 - k) + close * k;
                 } else {
                     currentEma = currentEma * (1 - k) + close * k;
@@ -115,9 +139,8 @@
                 ema12: ema12Arr[i],
                 ema26: ema26Arr[i],
                 macdLine: (ema12Arr[i] - ema26Arr[i])
-            })).filter((d, i) => i >= 25); // Start MACD from index 25
+            })).filter((d, i) => i >= 25); 
 
-            // Calculate Signal Line (EMA of MACD Line, Period 9)
             const macdLines = macdData.map(d => ({ c: d.macdLine }));
             const signalArr = calculateEMA(macdLines, 9, 'c');
 
@@ -131,10 +154,12 @@
 
         // --- CANDLESTICK CHART COMPONENT ---
         const CandlestickChart = React.memo(({ data, interval }) => {
+            // 1. Hooks Declarations (Always at top, unconditional)
             const containerRef = useRef(null);
             const [dims, setDims] = useState({ w: 0, h: 0 });
+            const [hoverIndex, setHoverIndex] = useState(null); 
+            const [hoverCoords, setHoverCoords] = useState({ x: 0, y: 0 });
 
-            // Sizing via ResizeObserver
             useEffect(() => {
                 if (!containerRef.current) return;
                 const resizeObserver = new ResizeObserver(entries => {
@@ -149,42 +174,69 @@
                 return () => resizeObserver.disconnect();
             }, []);
 
+            // 2. Variable Calculations & Preparation (Safe for missing data)
+            const { w, h } = dims;
+            const pT=20, pB=50, pR=50, pL=10;
+            
+            const safeData = data || [];
+            const visibleData = safeData.slice(-60);
+            const visibleLength = visibleData.length;
+            
+            const cW = w > 0 ? w - pL - pR : 0;
+            const H_total = h > 0 ? h - pT - pB : 0;
+            const H_candles = H_total * 0.6;
+            const H_volume = H_total * 0.2;
+            const H_macd = H_total * 0.2;
+            const Y_candles = pT;
+            const Y_volume = pT + H_candles + 5; 
+            const Y_macd = Y_volume + H_volume + 5;
+
+            const candleWidth = visibleLength > 0 ? cW / visibleLength : 0;
+
+            // 3. Callbacks (Must be before any return)
+            const handleMouseMove = useCallback((e) => {
+                if (!containerRef.current || visibleLength === 0 || cW <= 0) return;
+
+                const { left, top } = containerRef.current.getBoundingClientRect();
+                const mouseX = e.clientX - left;
+                const mouseY = e.clientY - top;
+
+                // Check boundary
+                if (mouseX < pL || mouseX > w - pR || mouseY < pT || mouseY > Y_macd + H_macd) {
+                    setHoverIndex(null);
+                    return;
+                }
+
+                const effectiveX = mouseX - pL;
+                let snappedIndex = Math.floor(effectiveX / candleWidth);
+                if (snappedIndex >= visibleLength) snappedIndex = visibleLength - 1;
+                if (snappedIndex < 0) snappedIndex = 0;
+
+                setHoverIndex(snappedIndex);
+                const snappedX = pL + snappedIndex * candleWidth + candleWidth / 2;
+                setHoverCoords({ x: snappedX, y: mouseY });
+
+            }, [w, visibleLength, candleWidth, pL, pR, pT, Y_macd, H_macd, cW]);
+
+            const handleMouseLeave = useCallback(() => {
+                setHoverIndex(null);
+            }, []);
+
+            // 4. Conditional Rendering (Only AFTER all hooks are declared)
             if (!data || data.length < 2) return (
                 <div className="h-full flex items-center justify-center text-xs text-gray-600 animate-pulse bg-[#0b0e11]" ref={containerRef}>
                     正在初始化市場數據...
                 </div>
             );
 
-            const { w, h } = dims;
             if (w === 0 || h === 0) return <div ref={containerRef} className="w-full h-full bg-[#0b0e11]" />;
 
-            // --- CHART LAYOUT DEFINITIONS ---
-            const pT=20, pB=50, pR=50, pL=10;
-            const H_total = h - pT - pB;
-            
-            // Panel Heights (Candles:Volume:MACD -> 60:20:20)
-            const H_candles = H_total * 0.6;
-            const H_volume = H_total * 0.2;
-            const H_macd = H_total * 0.2;
-
-            // Panel Y Positions
-            const Y_candles = pT;
-            const Y_volume = pT + H_candles + 5; // +5 for margin
-            const Y_macd = Y_volume + H_volume + 5; // +5 for margin
-
-            const cW = w - pL - pR;
-
-            // Visible window: Last 60 candles max
-            const visibleData = data.slice(-60);
-            
-            // --- TECHNICAL ANALYSIS CALCULATION ---
+            // 5. Heavy Math & Rendering Logic (Post-guard)
             const macdData = calculateMACDSeries(visibleData);
 
-            // Find Min/Max for Price Scaling
             let minP = Infinity;
             let maxP = -Infinity;
             let maxVol = 0;
-            let maxMacdHist = 0;
             let minMacdLine = Infinity;
             let maxMacdLine = -Infinity;
             
@@ -196,29 +248,23 @@
             
             macdData.forEach(d => {
                 if (d.histogram !== null) {
-                    maxMacdHist = Math.max(maxMacdHist, Math.abs(d.histogram));
                     minMacdLine = Math.min(minMacdLine, d.macdLine, d.signalLine);
                     maxMacdLine = Math.max(maxMacdLine, d.macdLine, d.signalLine);
                 }
             });
 
-            // Price Padding
             minP = minP * 0.998;
             maxP = maxP * 1.002;
             const rangeP = maxP - minP || 1;
             maxVol = maxVol || 1;
             const rangeMACD = (maxMacdLine - minMacdLine) || 0.1;
-
-            const getX = (i) => pL + (i / Math.max(visibleData.length - 1, 1)) * cW;
-            // Price Panel Scaling
+            
+            const getX = (i) => pL + i * candleWidth + candleWidth / 2;
             const getY = (p) => Y_candles + H_candles - ((p - minP) / rangeP) * H_candles;
-            // Volume Panel Scaling
             const getVolY = (v) => Y_volume + H_volume - (v / maxVol) * H_volume;
-            // MACD Panel Scaling
             const getMacdY = (v) => Y_macd + H_macd - ((v - minMacdLine) / rangeMACD) * H_macd;
-            const getMacdZeroY = getMacdY(0); // Y position of the zero line
+            const getMacdZeroY = getMacdY(0); 
 
-            // Calculate MA5 (for display)
             const ma5 = visibleData.map((d, i, arr) => {
                 if(i < 4) return null;
                 const sum = arr.slice(i-4, i+1).reduce((a,b) => a + b.c, 0);
@@ -226,14 +272,16 @@
             });
             
             const lastPrice = visibleData[visibleData.length-1].c;
-
+            const hoveredCandle = hoverIndex !== null ? visibleData[hoverIndex] : null;
+            const priceAtCursor = hoverIndex !== null 
+                ? minP + rangeP * ((Y_candles + H_candles - hoverCoords.y) / H_candles)
+                : null;
+                
             return (
                 <div ref={containerRef} className="w-full h-full relative select-none bg-[#0b0e11]">
-                    <svg width={w} height={h} className="overflow-visible">
+                    <svg width={w} height={h} className="overflow-visible" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
                         
-                        {/* 1. CANDLESTICK AREA */}
-
-                        {/* Price Grid (Y-Axis) */}
+                        {/* Grid & Prices */}
                         {[0, 0.25, 0.5, 0.75, 1].map(tick => {
                             const p = minP + rangeP * tick;
                             const y = getY(p);
@@ -248,7 +296,7 @@
                         {/* Candles */}
                         {visibleData.map((d, i) => {
                             const x = getX(i);
-                            const barW = Math.max(4, (cW / visibleData.length) * 0.7); 
+                            const barW = Math.max(4, candleWidth * 0.7); 
                             const isUp = d.c >= d.o;
                             const color = isUp ? "#22c55e" : "#ef4444";
                             const yHigh = getY(d.h);
@@ -264,35 +312,26 @@
                             )
                         })}
 
-                        {/* MA5 Line */}
+                        {/* MA5 */}
                         <polyline 
                             points={ma5.map((v, i) => v ? `${getX(i)},${getY(v)}` : null).filter(x=>x).join(' ')}
                             fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.8"
                         />
                         
-                        {/* Current Price Line & Label */}
+                        {/* Current Price */}
                         <line x1={pL} y1={getY(lastPrice)} x2={w-pR} y2={getY(lastPrice)} stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="4" opacity="0.8"/>
                         <rect x={w-pR} y={getY(lastPrice)-8} width={pR} height={16} fill="#3b82f6" opacity="0.9"/>
                         <text x={w-2} y={getY(lastPrice)} fontSize="10" fill="white" textAnchor="end" alignmentBaseline="middle" className="font-mono-num font-bold">{lastPrice.toFixed(2)}</text>
 
-
-                        {/* 2. VOLUME AREA */}
-                        
-                        {/* Separator Line */}
+                        {/* Volume */}
                         <line x1={pL} y1={Y_volume-2} x2={w-pR} y2={Y_volume-2} stroke="#1f2937" strokeWidth="1"/>
-                        
-                        {/* Volume Grid */}
                         <text x={w} y={Y_volume} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging">成交量</text>
                         <text x={w-2} y={Y_volume + 10} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging" className="font-mono-num">{maxVol.toLocaleString()}</text>
-                        
-                        {/* Volume Bars */}
                         {visibleData.map((d, i) => {
                             const x = getX(i);
-                            const barW = Math.max(2, (cW / visibleData.length) * 0.7);
-                            const isUp = d.c >= d.o;
-                            const color = isUp ? "#22c55e" : "#ef4444";
+                            const barW = Math.max(2, candleWidth * 0.7);
+                            const color = d.c >= d.o ? "#22c55e" : "#ef4444";
                             const volH = (d.v / maxVol) * H_volume;
-                            
                             return (
                                 <g key={`vol-${i}`}>
                                     <rect x={x - barW/2} y={Y_volume + H_volume - volH} width={barW} height={volH} fill={color} opacity="0.7" />
@@ -301,65 +340,57 @@
                         })}
                         <line x1={pL} y1={Y_volume + H_volume} x2={w-pR} y2={Y_volume + H_volume} stroke="#1f2937" strokeWidth="1"/>
 
-                        {/* 3. MACD AREA */}
-                        
-                        {/* Separator Line */}
+                        {/* MACD */}
                         <line x1={pL} y1={Y_macd-2} x2={w-pR} y2={Y_macd-2} stroke="#1f2937" strokeWidth="1"/>
-                        
-                        {/* MACD Label & Zero Line */}
                         <text x={w} y={Y_macd} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging">MACD(12, 26, 9)</text>
                         <line x1={pL} y1={getMacdZeroY} x2={w-pR} y2={getMacdZeroY} stroke="#6b7280" strokeWidth="1" strokeDasharray="2 2"/>
-                        
-                        {/* MACD Max/Min Labels */}
                         <text x={w-2} y={Y_macd + 10} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging" className="font-mono-num">{maxMacdLine.toFixed(3)}</text>
                         <text x={w-2} y={Y_macd + H_macd - 5} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging" className="font-mono-num">{minMacdLine.toFixed(3)}</text>
 
-
-                        {/* MACD Histogram */}
                         {macdData.map((d, i) => {
-                            const x = getX(i + visibleData.length - macdData.length); // X is based on visibleData index
-                            const barW = Math.max(2, (cW / visibleData.length) * 0.7);
+                            const x = getX(i);
+                            const barW = Math.max(2, candleWidth * 0.7);
                             if(d.histogram === null) return null;
                             const hY = getMacdY(d.macdLine - d.signalLine);
                             const isUp = d.histogram >= 0;
-                            const color = isUp ? "#10b981" : "#f43f5e"; // Teal for positive, Rose for negative
-                            
-                            return (
-                                <g key={`macd-hist-${i}`}>
-                                    <line 
-                                        x1={x} y1={getMacdZeroY} 
-                                        x2={x} y2={hY} 
-                                        stroke={color} 
-                                        strokeWidth={barW} 
-                                        opacity="0.6"
-                                    />
-                                </g>
-                            )
+                            const color = isUp ? "#10b981" : "#f43f5e";
+                            return <line key={`macd-hist-${i}`} x1={x} y1={getMacdZeroY} x2={x} y2={hY} stroke={color} strokeWidth={barW} opacity="0.6"/>
                         })}
-
-                        {/* MACD Line (Blue) */}
-                        <polyline 
-                            points={macdData.map((d, i) => d.macdLine !== null ? `${getX(i + visibleData.length - macdData.length)},${getMacdY(d.macdLine)}` : null).filter(x=>x).join(' ')}
-                            fill="none" stroke="#3b82f6" strokeWidth="1.5"
-                        />
+                        <polyline points={macdData.map((d, i) => d.macdLine !== null ? `${getX(i)},${getMacdY(d.macdLine)}` : null).filter(x=>x).join(' ')} fill="none" stroke="#3b82f6" strokeWidth="1.5"/>
+                        <polyline points={macdData.map((d, i) => d.signalLine !== null ? `${getX(i)},${getMacdY(d.signalLine)}` : null).filter(x=>x).join(' ')} fill="none" stroke="#f97316" strokeWidth="1.5"/>
                         <text x={pL + 5} y={Y_macd + 10} fontSize="10" fill="#3b82f6" alignmentBaseline="hanging">MACD</text>
-
-                        {/* Signal Line (Orange) */}
-                        <polyline 
-                            points={macdData.map((d, i) => d.signalLine !== null ? `${getX(i + visibleData.length - macdData.length)},${getMacdY(d.signalLine)}` : null).filter(x=>x).join(' ')}
-                            fill="none" stroke="#f97316" strokeWidth="1.5"
-                        />
                         <text x={pL + 40} y={Y_macd + 10} fontSize="10" fill="#f97316" alignmentBaseline="hanging">Signal</text>
-                        
+
+                        {/* Crosshair */}
+                        {hoverIndex !== null && hoverCoords.x >= pL && hoverCoords.x <= w - pR && (
+                            <g>
+                                <line x1={hoverCoords.x} y1={pT} x2={hoverCoords.x} y2={h-pB} stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" />
+                                <line x1={pL} y1={hoverCoords.y} x2={w-pR} y2={hoverCoords.y} stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" />
+                                <rect x={w-pR} y={hoverCoords.y-8} width={pR} height={16} fill="#60a5fa" opacity="0.9"/>
+                                <text x={w-2} y={hoverCoords.y} fontSize="10" fill="white" textAnchor="end" alignmentBaseline="middle" className="font-mono-num font-bold">{priceAtCursor ? priceAtCursor.toFixed(2) : ''}</text>
+                            </g>
+                        )}
                     </svg>
+                    
+                    {/* Info Box */}
+                    {hoveredCandle && (
+                        <div style={{ left: pL, top: pT }} className="absolute text-[10px] bg-gray-900/80 border border-blue-500/50 p-1 rounded-md shadow-lg font-mono pointer-events-none">
+                            <div className="text-blue-400 font-bold">K線數據</div>
+                            <div>O: <span className="text-white">{hoveredCandle.o.toFixed(2)}</span></div>
+                            <div>H: <span className="text-white">{hoveredCandle.h.toFixed(2)}</span></div>
+                            <div>L: <span className="text-white">{hoveredCandle.l.toFixed(2)}</span></div>
+                            <div>C: <span className="text-white">{hoveredCandle.c.toFixed(2)}</span></div>
+                            <div>V: <span className="text-yellow-400">{hoveredCandle.v.toLocaleString()}</span></div>
+                        </div>
+                    )}
                     
                     {/* Indicator Values */}
                     {macdData.length > 0 && (
                         <div className="absolute bottom-10 left-2 text-[10px] font-mono flex gap-3">
                             <span className="text-yellow-500 font-bold">MA(5)</span>
-                            <span className="text-blue-500 font-bold">MACD: <span className="text-gray-200">{macdData[macdData.length-1].macdLine.toFixed(3)}</span></span>
-                            <span className="text-orange-500 font-bold">Signal: <span className="text-gray-200">{macdData[macdData.length-1].signalLine.toFixed(3)}</span></span>
-                            <span className={`font-bold ${macdData[macdData.length-1].histogram >= 0 ? 'text-teal-400' : 'text-rose-400'}`}>Hist: <span className="text-gray-200">{macdData[macdData.length-1].histogram.toFixed(3)}</span></span>
+                            <span className="text-blue-500 font-bold">MACD: <span className="text-gray-200">{macdData[macdData.length-1].macdLine?.toFixed(3)}</span></span>
+                            <span className="text-orange-500 font-bold">Signal: <span className="text-gray-200">{macdData[macdData.length-1].signalLine?.toFixed(3)}</span></span>
+                            <span className={`font-bold ${macdData[macdData.length-1].histogram >= 0 ? 'text-teal-400' : 'text-rose-400'}`}>Hist: <span className="text-gray-200">{macdData[macdData.length-1].histogram?.toFixed(3)}</span></span>
                         </div>
                     )}
                 </div>
@@ -395,6 +426,19 @@
             const [order, setOrder] = useState({ side: 'BUY', type: 'LIMIT', tif: 'DAY', qty: '', price: '' });
             const [msg, setMsg] = useState(null);
             const priceFlashRef = useRef(null);
+            
+            // New State for Filtering
+            const [searchQuery, setSearchQuery] = useState('');
+
+            // Filtered Stocks for Watchlist (New Feature)
+            const filteredStocks = useMemo(() => {
+                if (!searchQuery) return stocks;
+                const query = searchQuery.toLowerCase();
+                return stocks.filter(s => 
+                    s.c.toLowerCase().includes(query) || 
+                    s.n.toLowerCase().includes(query)
+                );
+            }, [stocks, searchQuery]);
 
             // --- ENGINE: TICK & CANDLE GENERATION ---
             useEffect(() => {
@@ -692,9 +736,9 @@
             const MaxDepthSize = 4000;
             const generateDepth = (basePrice, isBid) => {
                 const depth = [];
-                for(let i=1; i<=10; i++) {
+                for(let i=1; i<=5; i++) {
                     const price = isBid ? basePrice - i * 0.01 : basePrice + i * 0.01;
-                    const size = Math.floor(Math.random() * 1000) + 100 * (11 - i); 
+                    const size = Math.floor(Math.random() * 1000) + 100 * (6 - i); 
                     depth.push({ price: parseFloat(price.toFixed(2)), size: size });
                 }
                 return depth;
@@ -702,43 +746,7 @@
             const bids = generateDepth(selStock.price, true).sort((a,b) => b.price - a.price).slice(0, 5);
             const asks = generateDepth(selStock.price, false).sort((a,b) => a.price - b.price).slice(0, 5);
 
-
-            // --- DOM Row Component (Refined) ---
-            const DOMRow = ({ price, size, type }) => {
-                const w = Math.min((size / MaxDepthSize) * 100, 100);
-                const isBid = type === 'bid';
-                const clickAction = () => {
-                    setOrder(p => ({
-                        ...p, 
-                        price: price.toFixed(2), 
-                        type: 'LIMIT', 
-                        side: isBid ? 'BUY' : 'SELL' // Clicking Bid for Buy, Ask for Sell
-                    }))
-                };
-
-                return (
-                    <div className="dom-row flex justify-between text-[11px] font-mono relative h-5 items-center cursor-pointer hover:bg-gray-700/50" 
-                         onClick={clickAction}>
-                        
-                        {isBid ? (
-                            <>
-                                {/* Bid Bar (Right Aligned) */}
-                                <div className="absolute top-0 bottom-0 right-0 bg-green-500/20" style={{ width: `${w}%` }}></div>
-                                <span className="z-10 w-1/3 text-left pl-2 text-gray-400">{size.toLocaleString()}</span>
-                                <span className="z-10 w-2/3 text-right pr-2 text-green-400 font-bold">{price.toFixed(2)}</span>
-                            </>
-                        ) : (
-                            <>
-                                {/* Ask Bar (Left Aligned) */}
-                                <div className="absolute top-0 bottom-0 left-0 bg-red-500/20" style={{ width: `${w}%` }}></div>
-                                <span className="z-10 w-2/3 text-left pl-2 text-red-400 font-bold">{price.toFixed(2)}</span>
-                                <span className="z-10 w-1/3 text-right pr-2 text-gray-400">{size.toLocaleString()}</span>
-                            </>
-                        )}
-                    </div>
-                );
-            };
-
+            // Spread
             const spread = asks.length > 0 && bids.length > 0 ? (asks[0].price - bids[0].price).toFixed(2) : 'N/A';
             const tickFlashClass = lastTradeDir === 'BUY' ? 'flash-green' : lastTradeDir === 'SELL' ? 'flash-red' : '';
 
@@ -775,16 +783,21 @@
                     {/* --- MAIN DASHBOARD --- */}
                     <div className="flex-1 flex overflow-hidden bg-[#0b0e11]">
                         
-                        {/* 1. WATCHLIST (Left) */}
+                        {/* 1. WATCHLIST (Left) - Now with Filtering */}
                         <div className="w-60 flex flex-col border-r border-gray-800 bg-gray-900/50">
                             <div className="p-2 border-b border-gray-800">
                                 <div className="relative">
-                                    <Icons.Search className="absolute left-2 top-2 text-gray-500"/>
-                                    <input className="w-full bg-gray-950 border border-gray-700 rounded py-1 pl-7 pr-2 text-xs text-gray-300 focus:border-blue-500 outline-none" placeholder="輸入代碼" />
+                                    <Icons.Search className="absolute left-2 top-2.5 text-gray-500"/>
+                                    <input 
+                                        className="w-full bg-gray-950 border border-gray-700 rounded py-1.5 pl-7 pr-2 text-xs text-gray-300 focus:border-blue-500 outline-none" 
+                                        placeholder="輸入代碼 / 名稱" 
+                                        value={searchQuery}
+                                        onChange={e => setSearchQuery(e.target.value)}
+                                    />
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto">
-                                {stocks.map(s => (
+                                {filteredStocks.map(s => (
                                     <div key={s.c} onClick={() => setSelCode(s.c)} className={`px-3 py-2 border-b border-gray-800/50 cursor-pointer hover:bg-gray-800 group ${selCode===s.c ? 'bg-blue-900/20 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent'}`}>
                                         <div className="flex justify-between items-center">
                                             <span className="font-bold text-gray-200">{s.c}</span>
@@ -796,6 +809,9 @@
                                         </div>
                                     </div>
                                 ))}
+                                {filteredStocks.length === 0 && (
+                                    <div className="text-center py-4 text-gray-600 italic">無符合結果</div>
+                                )}
                             </div>
                         </div>
 
@@ -814,8 +830,8 @@
                                 <div className="flex items-center gap-4">
                                     {/* Timeframe Selector */}
                                     <div className="flex bg-gray-800 rounded p-0.5 border border-gray-700">
-                                        <button onClick={()=>setChartInterval('1S')} className={`px-2 py-0.5 text-[10px] rounded font-bold ${chartInterval==='1S'?'bg-blue-600 text-white':'text-gray-400 hover:text-gray-300'}`}>1S</button>
-                                        <button onClick={()=>setChartInterval('1M')} className={`px-2 py-0.5 text-[10px] rounded font-bold ${chartInterval==='1M'?'bg-blue-600 text-white':'text-gray-400 hover:text-gray-300'}`}>1M</button>
+                                        <button onClick={()=>setChartInterval('1S')} className={`px-2 py-0.5 text-[10px] rounded font-bold ${chartInterval==='1S'?'bg-blue-600 text-white hover:bg-blue-500':'text-gray-400 hover:text-gray-300'}`}>1S</button>
+                                        <button onClick={()=>setChartInterval('1M')} className={`px-2 py-0.5 text-[10px] rounded font-bold ${chartInterval==='1M'?'bg-blue-600 text-white hover:bg-blue-500':'text-gray-400 hover:text-gray-300'}`}>1M</button>
                                     </div>
                                     
                                     <div className="flex gap-4 text-xs font-mono text-gray-500 border-l border-gray-700 pl-4">
@@ -890,37 +906,71 @@
                         {/* 3. ORDER ENTRY & DEPTH (Right - Fixed Width) */}
                         <div className="w-72 flex flex-col bg-gray-900/80 border-l border-gray-800">
                             
-                            {/* Level 2 DOM (Optimized) */}
+                            {/* Level 2 DOM (Redesigned - Parallel 5 Levels) */}
                             <div className="flex-1 flex flex-col overflow-hidden border-b border-gray-800 dom-container">
-                                <div className="px-2 py-1 bg-gray-950 text-[10px] text-gray-500 font-bold flex justify-between uppercase">
-                                    <span>Ask (賣方)</span><span className="text-right">Size</span>
-                                </div>
-                                <div className="flex-1 overflow-y-auto bg-[#0b0e11] flex flex-col-reverse justify-end relative">
-                                    {/* Asks (Top) */}
-                                    {asks.slice().reverse().map((a, i) => <DOMRow key={`ask${i}`} price={a.price} size={a.size} type="ask"/>)}
-                                    
-                                    {/* Spread - Highlighted for visibility */}
-                                    <div className="py-1 bg-gray-700/50 text-center font-bold text-white border-y border-gray-700 text-sm font-mono-num">
-                                        價差 (SPREAD): <span className={parseFloat(spread)>0.01 ? 'text-yellow-400' : 'text-green-400'}>{spread}</span>
-                                        {/* Optional: Add Last Trade Indicator */}
-                                        {lastTradeDir && (
-                                            <span className={`text-[10px] ml-2 font-normal ${lastTradeDir==='BUY'?'text-green-500':'text-red-500'}`}>
-                                                ({lastTradeDir==='BUY'?'↑':'↓'})
-                                            </span>
-                                        )}
+                                {/* Header */}
+                                <div className="flex h-6 bg-gray-950 text-[10px] text-gray-500 font-bold uppercase border-b border-gray-800">
+                                    <div className="flex-1 flex items-center px-2 border-r border-gray-800">
+                                        <span className="w-12 text-left">量</span>
+                                        <span className="flex-1 text-right">買價</span>
                                     </div>
-
-                                    {/* Bids (Bottom) */}
-                                    {bids.map((b, i) => <DOMRow key={`bid${i}`} price={b.price} size={b.size} type="bid"/>)}
-                                    
+                                    <div className="flex-1 flex items-center px-2">
+                                        <span className="flex-1 text-left">賣價</span>
+                                        <span className="w-12 text-right">量</span>
+                                    </div>
                                 </div>
-                                <div className="px-2 py-1 bg-gray-950 text-[10px] text-gray-500 font-bold flex justify-between uppercase border-t border-gray-800">
-                                    <span>Size</span><span className="text-right">Bid (買方)</span>
+
+                                {/* Rows */}
+                                <div className="flex-1 bg-[#0b0e11] overflow-y-auto">
+                                    {Array.from({ length: 5 }).map((_, i) => {
+                                        const bid = bids[i];
+                                        const ask = asks[i];
+                                        
+                                        // Calc widths for bars
+                                        const bidW = Math.min((bid.size / MaxDepthSize) * 100, 100);
+                                        const askW = Math.min((ask.size / MaxDepthSize) * 100, 100);
+
+                                        return (
+                                            <div key={i} className="flex h-6 border-b border-gray-800/30 text-xs font-mono">
+                                                {/* Bid Side */}
+                                                <div 
+                                                    className="flex-1 flex items-center relative cursor-pointer hover:bg-gray-800 border-r border-gray-800/30 overflow-hidden"
+                                                    onClick={() => setOrder(p => ({ ...p, price: bid.price.toFixed(2), type: 'LIMIT', side: 'BUY' }))}
+                                                >
+                                                    {/* Depth Bar (Left to Right or Right to Left?) User: "BID volume on left". Bar usually aligns with volume? Let's put bar behind volume. */}
+                                                    {/* Actually, usually depth bars fill from the "middle" outwards or "side" inwards.
+                                                        Let's make the bar fill the whole cell background based on size proportional to max.
+                                                    */}
+                                                    <div className="absolute top-0 bottom-0 left-0 bg-green-900/20 transition-all duration-200" style={{ width: `${bidW}%` }}></div>
+                                                    
+                                                    <span className="z-10 w-12 pl-2 text-gray-400 text-[11px]">{bid.size}</span>
+                                                    <span className="z-10 flex-1 text-right pr-2 text-green-400 font-bold">{bid.price.toFixed(2)}</span>
+                                                </div>
+
+                                                {/* Ask Side */}
+                                                <div 
+                                                    className="flex-1 flex items-center relative cursor-pointer hover:bg-gray-800 overflow-hidden"
+                                                    onClick={() => setOrder(p => ({ ...p, price: ask.price.toFixed(2), type: 'LIMIT', side: 'SELL' }))}
+                                                >
+                                                    {/* Depth Bar */}
+                                                    <div className="absolute top-0 bottom-0 right-0 bg-red-900/20 transition-all duration-200" style={{ width: `${askW}%` }}></div>
+
+                                                    <span className="z-10 flex-1 text-left pl-2 text-red-400 font-bold">{ask.price.toFixed(2)}</span>
+                                                    <span className="z-10 w-12 text-right pr-2 text-gray-400 text-[11px]">{ask.size}</span>
+                                                </div>
+                                            </div>
+                                        );
+                                    })}
+                                </div>
+                                
+                                {/* Spread Info Footer (Optional, fits in the empty space if needed, or just keep it clean) */}
+                                <div className="py-1 bg-gray-900 border-t border-gray-800 text-center text-[10px] text-gray-500 font-mono">
+                                    Spread: {spread}
                                 </div>
                             </div>
 
                             {/* Order Entry Form (Optimized) */}
-                            <div className="p-3 bg-gray-900">
+                            <div className="p-3 bg-gray-900 shrink-0">
                                 <div className="flex justify-between mb-2 text-xs">
                                     <span className="font-bold text-gray-300">下單面板</span>
                                     {currentPos && <span className={currentPos.qty>0?'text-green-400':'text-red-400'}>{currentPos.qty} 股</span>}
@@ -952,7 +1002,7 @@
                                     {/* Quick Size Buttons */}
                                     <div className="flex gap-1">
                                         {[0.25, 0.5, 1].map(pct => (
-                                            <button key={pct} type="button" onClick={()=>setQtyByPct(pct)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-[10px] text-gray-400 rounded py-1 border border-gray-700">{pct*100}% 現金</button>
+                                            <button key={pct} type="button" onClick={()=>setQtyByPct(pct)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-[10px] text-gray-400 rounded py-1 border border-gray-700 transition-colors">{pct*100}% 現金</button>
                                         ))}
                                     </div>
 
@@ -968,7 +1018,7 @@
                                         </select>
                                     </div>
 
-                                    <button type="submit" className={`w-full py-2.5 rounded font-bold text-sm text-white shadow-xl mt-2 ${order.side==='BUY'?'bg-green-700 hover:bg-green-600':'bg-red-700 hover:bg-red-600'}`}>
+                                    <button type="submit" className={`w-full py-2.5 rounded font-bold text-sm text-white shadow-xl mt-2 transition-colors ${order.side==='BUY'?'bg-green-700 hover:bg-green-600':'bg-red-700 hover:bg-red-600'}`}>
                                         確認 {order.side==='BUY'?'買入':'賣出'} 訂單
                                     </button>
                                 </form>
