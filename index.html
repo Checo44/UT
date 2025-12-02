@@ -73,7 +73,7 @@
         };
 
         // --- CONSTANTS & HELPERS ---
-        const INITIAL_CASH = 100000.00;
+        const INITIAL_CASH = 100000.00; // 初始現金
         const STATIC_PRICE = 100.00; // 價格固定為 100.00
         
         // MLB 30 隊數據
@@ -177,33 +177,21 @@
         };
 
 
-        // Market Depth / 各隊委託狀態區 (New Component)
+        // Market Depth / 各隊委託狀態區 (只顯示價格，委託量皆為空白)
         const MarketDepth = ({ price }) => {
-            // Static depth levels based around the price 100.00
-            const mockLevels = useMemo(() => {
-                const levels = [];
-                const baseVolume = 1500;
+            // Static price levels for display, but 0 quantity
+            const staticLevels = useMemo(() => {
+                const bids = [];
+                const asks = [];
                 
-                // 5 Bid levels (委買價 - Green/Inner Market)
+                // 5 Bid levels (委買價)
                 for (let i = 0; i < 5; i++) {
-                    levels.push({
-                        price: price - 0.05 * (4 - i), // e.g., 99.80, 99.85, 99.90, 99.95, 100.00 (Note: price is 100.00 so highest bid is 99.95)
-                        qty: baseVolume + (i * 200) + (i % 2 === 0 ? 50 : -50),
-                        side: 'BID'
-                    });
+                    bids.push({ price: price - 0.05 * (4 - i), qty: 0, side: 'BID' });
                 }
-                // 5 Ask levels (委賣價 - Red/Outer Market)
+                // 5 Ask levels (委賣價)
                 for (let i = 0; i < 5; i++) {
-                    levels.push({
-                        price: price + 0.05 * (i + 1), // e.g., 100.05, 100.10, 100.15, 100.20, 100.25
-                        qty: baseVolume + (i * 150) + (i % 3 === 0 ? 100 : 0),
-                        side: 'ASK'
-                    });
+                    asks.push({ price: price + 0.05 * (i + 1), qty: 0, side: 'ASK' });
                 }
-
-                // Sort and pair for 5 symmetrical rows
-                const bids = levels.filter(l => l.side === 'BID').sort((a, b) => b.price - a.price); // Highest bid first
-                const asks = levels.filter(l => l.side === 'ASK').sort((a, b) => a.price - b.price); // Lowest ask first
 
                 // Align bids and asks for 5 rows
                 const rows = bids.map((bid, index) => ({
@@ -211,18 +199,13 @@
                     ask: asks[index]
                 }));
 
-                const allQtys = levels.map(l => l.qty);
-                const maxQty = Math.max(...allQtys);
-                const totalBidQty = bids.reduce((sum, b) => sum + b.qty, 0);
-                const totalAskQty = asks.reduce((sum, a) => sum + a.qty, 0);
-
-                return { rows, maxQty, totalBidQty, totalAskQty };
+                return { rows, totalBidQty: 0, totalAskQty: 0 };
             }, [price]);
 
-            const { rows, maxQty, totalBidQty, totalAskQty } = mockLevels;
-            const totalVol = totalBidQty + totalAskQty;
-            const bidPct = totalVol > 0 ? (totalBidQty / totalVol) * 100 : 50;
-            const askPct = totalVol > 0 ? (totalAskQty / totalVol) * 100 : 50;
+            const { rows, totalBidQty, totalAskQty } = staticLevels;
+            const maxQty = 1; // Used for calculating the bar width (can be 1 since all QTY is 0)
+            const bidPct = 50;
+            const askPct = 50;
 
 
             return (
@@ -239,16 +222,23 @@
                                 <span className="text-gray-400">({askPct.toFixed(2)}%)</span>
                             </span>
                         </div>
-                        {/* Percentage Bar */}
+                        {/* Percentage Bar (Equal split since QTY is 0) */}
                         <div className="flex w-full h-2 mt-1 rounded overflow-hidden">
-                            <div className="bg-green-600 transition-all duration-300" style={{ width: `${bidPct}%` }}></div>
-                            <div className="bg-red-600 transition-all duration-300" style={{ width: `${askPct}%` }}></div>
+                            <div className="bg-green-600 transition-all duration-300" style={{ width: `50%` }}></div>
+                            <div className="bg-red-600 transition-all duration-300" style={{ width: `50%` }}></div>
                         </div>
                     </div>
                     
                     {/* Order Book Table */}
-                    <div className="flex-1 min-h-0 overflow-hidden">
-                        <table className="w-full text-left text-[11px] border-collapse relative market-depth-table">
+                    <div className="flex-1 min-h-0 overflow-hidden relative">
+                        {/* Overlay for "No Data" message */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-gray-950/80 z-20">
+                            <p className="text-gray-500 text-sm font-bold text-center p-4 rounded-md border border-gray-700">
+                                委託量僅接受使用者回傳數據<br/>目前市場深度數據為空
+                            </p>
+                        </div>
+
+                        <table className="w-full text-left text-[11px] border-collapse relative market-depth-table opacity-30">
                             <thead className="text-gray-500 sticky top-0 bg-gray-950/70 border-b border-gray-700">
                                 <tr>
                                     <th className="text-right px-2 py-1">量</th>
@@ -259,15 +249,16 @@
                             </thead>
                             <tbody className="font-mono-num divide-y divide-gray-900/50">
                                 {rows.map((r, index) => {
-                                    const bidWidthPct = (r.bid.qty / maxQty) * 100;
-                                    const askWidthPct = (r.ask.qty / maxQty) * 100;
+                                    // QTY is 0, so bar widths are 0
+                                    const bidWidthPct = 0; 
+                                    const askWidthPct = 0;
                                     
                                     return (
                                         <tr key={r.bid.price} className="h-[30px] transition-colors text-xs font-mono-num">
                                             
-                                            {/* QTY (Bid) - Volume Bar is inside this cell, right aligned */}
+                                            {/* QTY (Bid) - Always display 0 */}
                                             <td className="relative w-1/4">
-                                                {/* Bid Bar Background (Right aligned, Green) */}
+                                                {/* Bid Bar Background (width 0) */}
                                                 <div 
                                                     className="absolute top-0 right-0 h-full bg-green-900/40 transition-all duration-300" 
                                                     style={{ width: `${bidWidthPct}%` }}
@@ -284,9 +275,9 @@
                                                 </div>
                                             </td>
                                             
-                                            {/* ASK PRICE (委賣價) - Volume Bar is inside this cell, left aligned */}
+                                            {/* ASK PRICE (委賣價) */}
                                             <td className="relative w-1/4">
-                                                {/* Ask Bar Background (Left aligned, Red) */}
+                                                {/* Ask Bar Background (width 0) */}
                                                 <div 
                                                     className="absolute top-0 left-0 h-full bg-red-900/40 transition-all duration-300" 
                                                     style={{ width: `${askWidthPct}%` }}
@@ -296,7 +287,7 @@
                                                 </div>
                                             </td>
                                             
-                                            {/* QTY (Ask) */}
+                                            {/* QTY (Ask) - Always display 0 */}
                                             <td className="relative w-1/4">
                                                 <div className="relative-cell justify-start pl-2 text-red-300">
                                                     <span className='z-10 relative'>{r.ask.qty.toLocaleString()}</span>
@@ -396,7 +387,6 @@
 
         // --- MAIN APP ---
         function App() {
-            // State initialization... (same as before)
             const [time, setTime] = useState(new Date());
             const [stocks, setStocks] = useState(INITIAL_DATA.map(s => ({ 
                 ...s, 
@@ -411,14 +401,15 @@
             })));
             const [selCode, setSelCode] = useState('ARI'); 
             
-            // Account State 
+            // Account State (P/L metrics are initialized to 0 as requested)
             const [account, setAccount] = useState({ 
-                cash: INITIAL_CASH, 
-                realized: 0, 
-                uplTotal: 0, 
-                netLiq: INITIAL_CASH,
-                dayPL: 0
+                cash: INITIAL_CASH,     // 初始現金
+                realized: 0,            // 已實現盈虧 (初始為 0)
+                uplTotal: 0,            // 未實現盈虧總額 (初始為 0)
+                netLiq: INITIAL_CASH,   // 淨資產 = 初始現金 + 盈虧
+                dayPL: 0                // 日盈虧 (初始為 0)
             });
+            // Positions and Orders are initialized to empty arrays
             const [pos, setPos] = useState([]);
             const [orders, setOrders] = useState([]);
             
@@ -513,9 +504,12 @@
                             }
                         } else {
                             // Adding to existing position (same side)
-                            const newTotalQty = exQty + (isBuy ? tradeQty : -tradeQty);
-                            const newAvg = ((ex.avg * Math.abs(exQty)) + (price * tradeQty)) / Math.abs(newTotalQty);
-                            nextPos[exIndex] = { ...ex, qty: newTotalQty, avg: newAvg };
+                            const currentValue = ex.avg * Math.abs(exQty);
+                            const newValue = price * tradeQty;
+                            const newTotalQty = Math.abs(exQty) + tradeQty;
+                            const newAvg = (currentValue + newValue) / newTotalQty;
+                            
+                            nextPos[exIndex] = { ...ex, qty: exQty + (isBuy ? tradeQty : -tradeQty), avg: newAvg };
                         }
                     } else if (tradeQty > 0) {
                         // Opening a new position
@@ -551,6 +545,7 @@
                 if(!qty || qty <= 0) return notify("無效數量", "error");
                 if(order.type==='LIMIT' && (!price || price <= 0)) return notify("無效價格", "error");
 
+                // Note: Using staticPrice as the required funds calculation
                 const requiredFunds = order.side === 'BUY' ? staticPrice * qty : 0; 
                 if (order.side === 'BUY' && requiredFunds > currentCash) return notify("購買力不足 (現金不足)", "error");
 
@@ -608,14 +603,17 @@
                             <span className="font-bold text-gray-100 tracking-wide">PRO<span className="text-blue-500">TRADER</span> <span className="text-gray-600 text-[10px]">版面交換 v4</span></span>
                         </div>
                         <div className="flex gap-6 font-mono-num text-xs">
+                            {/* 淨資產 (Net Liq) - 保持初始現金值 */}
                             <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
                                 <span className="text-gray-500 uppercase text-[10px]">Net Liq (淨資產)</span>
                                 <span className="font-bold text-gray-200">{fmtUSD(account.netLiq)}</span>
                             </div>
+                            {/* 日盈虧 (Day P/L) - 初始為 0.00 */}
                             <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
                                 <span className="text-gray-500 uppercase text-[10px]">Day P/L (日盈虧)</span>
                                 <span className={`font-bold ${col(account.dayPL)}`}>{fmtUSD(account.dayPL)}</span>
                             </div>
+                            {/* 現金 (Cash) - 保持初始現金值 */}
                             <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
                                 <span className="text-gray-500 uppercase text-[10px]">Cash (現金)</span>
                                 <span className="font-bold text-blue-400">{fmtUSD(account.cash)}</span>
@@ -710,7 +708,8 @@
                                 <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2 shrink-0">
                                     各隊委託狀態區 (Market Depth)
                                 </div>
-                                <MarketDepth price={selStock.price} />
+                                {/* Market Depth component now only displays static prices with zero quantity */}
+                                <MarketDepth price={selStock.price} /> 
                             </div>
 
                         </div>
