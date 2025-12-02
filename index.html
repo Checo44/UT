@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ProTrader: Enhanced Technicals</title>
+    <title>ProTrader: Enhanced Layout Swap (MLB)</title>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- React & ReactDOM -->
@@ -26,15 +26,23 @@
         ::-webkit-scrollbar-thumb { background: #374151; border-radius: 2px; }
         ::-webkit-scrollbar-thumb:hover { background: #4b5563; }
         
-        /* Animations: Tick Flash for UX */
-        .flash-green { animation: flashG 0.2s ease-out; }
-        .flash-red { animation: flashR 0.2s ease-out; }
-        @keyframes flashG { 0% { background-color: rgba(34, 197, 94, 0.5); } 100% { background-color: transparent; } }
-        @keyframes flashR { 0% { background-color: rgba(239, 68, 68, 0.5); } 100% { background-color: transparent; } }
-        
-        /* Custom DOM Styling */
-        .dom-row { transition: background-color 0.1s; }
-        .dom-container { position: relative; }
+        /* Ensure canvas is flexible */
+        .chart-container canvas {
+            display: block;
+        }
+
+        /* Table Cell Styling for volume bars */
+        /* IMPORTANT: Setting TD to relative and background div to absolute inside ensures the bar is behind the content */
+        .market-depth-table td {
+            padding: 0; /* Remove default padding for full background coverage */
+            height: 30px; /* Fixed height for rows */
+        }
+        .market-depth-table .relative-cell {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 <body class="text-gray-300 overflow-hidden selection:bg-blue-500/30 selection:text-blue-200">
@@ -42,9 +50,7 @@
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect, useRef, useCallback, useMemo } = React;
-
-        const apiKey = ""; 
+        const { useState, useEffect, useMemo, useRef } = React;
 
         // --- ICONS (Lucide) ---
         const Icon = ({ d, size=16, className, children }) => (
@@ -58,357 +64,353 @@
             Search: (p) => <svg {...p} xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>,
             Briefcase: (p) => <Icon {...p} d="M20 7h-3a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2H4a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>,
             X: (p) => <Icon {...p} d="M18 6L6 18 M6 6l12 12"/>,
-            Sparkles: (p) => <Icon {...p} d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>,
             Settings: (p) => (
-                <Icon {...p} d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V4a2 2 0 0 0-2-2z">
+                <Icon {...p} d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.1a2 2 0 0 1-1-1.72v-.51a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V4a2 2 0 0 0-2-2z">
                     <circle cx="12" cy="12" r="3"/>
                 </Icon>
             ),
             Wifi: (p) => <Icon {...p} d="M5 12.55a11 11 0 0 1 14.08 0 M1.42 9a16 16 0 0 1 21.16 0 M8.53 16.11a6 6 0 0 1 6.95 0 M12 20h.01"/>,
-            Send: (p) => <Icon {...p} d="M22 2 11 13M22 2 15 22 11 13 2 9z"/>
         };
 
         // --- CONSTANTS & HELPERS ---
         const INITIAL_CASH = 100000.00;
-       const INITIAL_DATA = [
-            { c:'ARI', n:'Arizona Diamondbacks (亞利桑那響尾蛇)', p:98.50 },
-            { c:'ATL', n:'Atlanta Braves (亞特蘭大勇士)', p:155.10 },
-            { c:'BAL', n:'Baltimore Orioles (巴爾的摩金鶯)', p:112.90 },
-            { c:'BOS', n:'Boston Red Sox (波士頓紅襪)', p:130.40 },
-            { c:'CHC', n:'Chicago Cubs (芝加哥小熊)', p:105.70 },
-            { c:'CHW', n:'Chicago White Sox (芝加哥白襪)', p:78.60 },
-            { c:'CIN', n:'Cincinnati Reds (辛辛那提紅人)', p:92.30 },
-            { c:'CLE', n:'Cleveland Guardians (克里夫蘭守護者)', p:108.20 },
-            { c:'COL', n:'Colorado Rockies (科羅拉多洛磯)', p:75.10 },
-            { c:'DET', n:'Detroit Tigers (底特律老虎)', p:85.90 },
-            { c:'HOU', n:'Houston Astros (休士頓太空人)', p:168.00 },
-            { c:'KCR', n:'Kansas City Royals (堪薩斯市皇家)', p:80.40 },
-            { c:'LAA', n:'Los Angeles Angels (洛杉磯天使)', p:115.60 },
-            { c:'LAD', n:'Los Angeles Dodgers (洛杉磯道奇)', p:195.60 },
-            { c:'MIA', n:'Miami Marlins (邁阿密馬林魚)', p:90.70 },
-            { c:'MIL', n:'Milwaukee Brewers (密爾瓦基釀酒人)', p:120.20 },
-            { c:'MIN', n:'Minnesota Twins (明尼蘇達雙城)', p:102.30 },
-            { c:'NYM', n:'New York Mets (紐約大都會)', p:145.90 },
-            { c:'NYY', n:'New York Yankees (紐約洋基)', p:185.50 },
-            { c:'OAK', n:'Oakland Athletics (奧克蘭運動家)', p:65.20 },
-            { c:'PHI', n:'Philadelphia Phillies (費城費城人)', p:138.40 },
-            { c:'PIT', n:'Pittsburgh Pirates (匹茲堡海盜)', p:82.30 },
-            { c:'SDP', n:'San Diego Padres (聖地牙哥教士)', p:125.20 },
-            { c:'SEA', n:'Seattle Mariners (西雅圖水手)', p:100.90 },
-            { c:'SFG', n:'San Francisco Giants (舊金山巨人)', p:100.00 },
-            { c:'STL', n:'St. Louis Cardinals (聖路易紅雀)', p:130.50 },
-            { c:'TBR', n:'Tampa Bay Rays (坦帕灣光芒)', p:140.10 },
-            { c:'TEX', n:'Texas Rangers (德州遊騎兵)', p:150.30 },
-            { c:'TOR', n:'Toronto Blue Jays (多倫多藍鳥)', p:110.35 },
-            { c:'WAS', n:'Washington Nationals (華盛頓國民)', p:70.40 },
+        const STATIC_PRICE = 100.00; // 價格固定為 100.00
+        
+        // MLB 30 隊數據
+        const INITIAL_DATA = [
+            { c:'ARI', n:'Arizona Diamondbacks (亞利桑那響尾蛇)', p:STATIC_PRICE },
+            { c:'ATL', n:'Atlanta Braves (亞特蘭大勇士)', p:STATIC_PRICE },
+            { c:'BAL', n:'Baltimore Orioles (巴爾的摩金鶯)', p:STATIC_PRICE },
+            { c:'BOS', n:'Boston Red Sox (波士頓紅襪)', p:STATIC_PRICE },
+            { c:'CHC', n:'Chicago Cubs (芝加哥小熊)', p:STATIC_PRICE },
+            { c:'CHW', n:'Chicago White Sox (芝加哥白襪)', p:STATIC_PRICE },
+            { c:'CIN', n:'Cincinnati Reds (辛辛那提紅人)', p:STATIC_PRICE },
+            { c:'CLE', n:'Cleveland Guardians (克里夫蘭守護者)', p:STATIC_PRICE },
+            { c:'COL', n:'Colorado Rockies (科羅拉多洛磯)', p:STATIC_PRICE },
+            { c:'DET', n:'Detroit Tigers (底特律老虎)', p:STATIC_PRICE },
+            { c:'HOU', n:'Houston Astros (休士頓太空人)', p:STATIC_PRICE },
+            { c:'KCR', n:'Kansas City Royals (堪薩斯市皇家)', p:STATIC_PRICE },
+            { c:'LAA', n:'Los Angeles Angels (洛杉磯天使)', p:STATIC_PRICE },
+            { c:'LAD', n:'Los Angeles Dodgers (洛杉磯道奇)', p:STATIC_PRICE },
+            { c:'MIA', n:'Miami Marlins (邁阿密馬林魚)', p:STATIC_PRICE },
+            { c:'MIL', n:'Milwaukee Brewers (密爾瓦基釀酒人)', p:STATIC_PRICE },
+            { c:'MIN', n:'Minnesota Twins (明尼蘇達雙城)', p:STATIC_PRICE },
+            { c:'NYM', n:'New York Mets (紐約大都會)', p:STATIC_PRICE },
+            { c:'NYY', n:'New York Yankees (紐約洋基)', p:STATIC_PRICE },
+            { c:'OAK', n:'Oakland Athletics (奧克蘭運動家)', p:STATIC_PRICE },
+            { c:'PHI', n:'Philadelphia Phillies (費城費城人)', p:STATIC_PRICE },
+            { c:'PIT', n:'Pittsburgh Pirates (匹茲堡海盜)', p:STATIC_PRICE },
+            { c:'SDP', n:'San Diego Padres (聖地牙哥教士)', p:STATIC_PRICE },
+            { c:'SEA', n:'Seattle Mariners (西雅圖水手)', p:STATIC_PRICE },
+            { c:'SFG', n:'San Francisco Giants (舊金山巨人)', p:STATIC_PRICE },
+            { c:'STL', n:'St. Louis Cardinals (聖路易紅雀)', p:STATIC_PRICE },
+            { c:'TBR', n:'Tampa Bay Rays (坦帕灣光芒)', p:STATIC_PRICE },
+            { c:'TEX', n:'Texas Rangers (德州遊騎兵)', p:STATIC_PRICE },
+            { c:'TOR', n:'Toronto Blue Jays (多倫多藍鳥)', p:STATIC_PRICE },
+            { c:'WAS', n:'Washington Nationals (華盛頓國民)', p:STATIC_PRICE },
         ];
 
+
         const fmtUSD = (n) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', minimumFractionDigits: 2 }).format(n);
-        const fmtPct = (n) => `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
         const col = (n) => n > 0 ? 'text-green-500' : n < 0 ? 'text-red-500' : 'text-gray-400';
         
-        // --- INDICATOR CALCULATION HELPERS (Simple EMA for Mock) ---
-        const calculateEMA = (data, period, closeKey='c', prevEma) => {
-            const k = 2 / (period + 1);
-            let emaArr = [];
-            let currentEma = prevEma !== undefined ? prevEma : parseFloat(data[0][closeKey]);
+        // --- COMPONENTS ---
 
-            data.forEach((d, i) => {
-                const close = parseFloat(d[closeKey]);
-                if (i === 0 && prevEma === undefined) {
-                    currentEma = close;
-                } else if (i === 0 && prevEma !== undefined) {
-                    currentEma = currentEma * (1 - k) + close * k;
-                } else {
-                    currentEma = currentEma * (1 - k) + close * k;
-                }
-                emaArr.push(currentEma);
-            });
-            return emaArr;
-        };
-
-        const calculateMACDSeries = (data) => {
-            if (data.length < 26) return data.map(d => ({...d, ema12: null, ema26: null, macdLine: null, signalLine: null, histogram: null}));
-            
-            const closes = data.map(d => ({ c: d.c }));
-            const ema12Arr = calculateEMA(closes, 12, 'c');
-            const ema26Arr = calculateEMA(closes, 26, 'c');
-            
-            const macdData = data.map((d, i) => ({
-                ...d,
-                ema12: ema12Arr[i],
-                ema26: ema26Arr[i],
-                macdLine: (ema12Arr[i] - ema26Arr[i])
-            })).filter((d, i) => i >= 25); 
-
-            const macdLines = macdData.map(d => ({ c: d.macdLine }));
-            const signalArr = calculateEMA(macdLines, 9, 'c');
-
-            return macdData.map((d, i) => ({
-                ...d,
-                signalLine: signalArr[i],
-                histogram: d.macdLine - signalArr[i]
-            }));
-        };
-
-
-        // --- CANDLESTICK CHART COMPONENT ---
-        const CandlestickChart = React.memo(({ data, interval }) => {
-            // 1. Hooks Declarations (Always at top, unconditional)
-            const containerRef = useRef(null);
-            const [dims, setDims] = useState({ w: 0, h: 0 });
-            const [hoverIndex, setHoverIndex] = useState(null); 
-            const [hoverCoords, setHoverCoords] = useState({ x: 0, y: 0 });
+        // K 線圖繪製 - 顯示靜態價格線
+        const KLineChart = ({ price }) => {
+            const canvasRef = useRef(null);
 
             useEffect(() => {
-                if (!containerRef.current) return;
-                const resizeObserver = new ResizeObserver(entries => {
-                    for (let entry of entries) {
-                        const { width, height } = entry.contentRect;
-                        if (width > 0 && height > 0) {
-                            setDims({ w: width, h: height });
-                        }
-                    }
-                });
-                resizeObserver.observe(containerRef.current);
-                return () => resizeObserver.disconnect();
-            }, []);
+                const canvas = canvasRef.current;
+                if (!canvas) return;
 
-            // 2. Variable Calculations & Preparation (Safe for missing data)
-            const { w, h } = dims;
-            const pT=20, pB=50, pR=50, pL=10;
-            
-            const safeData = data || [];
-            const visibleData = safeData.slice(-60);
-            const visibleLength = visibleData.length;
-            
-            const cW = w > 0 ? w - pL - pR : 0;
-            const H_total = h > 0 ? h - pT - pB : 0;
-            const H_candles = H_total * 0.6;
-            const H_volume = H_total * 0.2;
-            const H_macd = H_total * 0.2;
-            const Y_candles = pT;
-            const Y_volume = pT + H_candles + 5; 
-            const Y_macd = Y_volume + H_volume + 5;
-
-            const candleWidth = visibleLength > 0 ? cW / visibleLength : 0;
-
-            // 3. Callbacks (Must be before any return)
-            const handleMouseMove = useCallback((e) => {
-                if (!containerRef.current || visibleLength === 0 || cW <= 0) return;
-
-                const { left, top } = containerRef.current.getBoundingClientRect();
-                const mouseX = e.clientX - left;
-                const mouseY = e.clientY - top;
-
-                // Check boundary
-                if (mouseX < pL || mouseX > w - pR || mouseY < pT || mouseY > Y_macd + H_macd) {
-                    setHoverIndex(null);
-                    return;
-                }
-
-                const effectiveX = mouseX - pL;
-                let snappedIndex = Math.floor(effectiveX / candleWidth);
-                if (snappedIndex >= visibleLength) snappedIndex = visibleLength - 1;
-                if (snappedIndex < 0) snappedIndex = 0;
-
-                setHoverIndex(snappedIndex);
-                const snappedX = pL + snappedIndex * candleWidth + candleWidth / 2;
-                setHoverCoords({ x: snappedX, y: mouseY });
-
-            }, [w, visibleLength, candleWidth, pL, pR, pT, Y_macd, H_macd, cW]);
-
-            const handleMouseLeave = useCallback(() => {
-                setHoverIndex(null);
-            }, []);
-
-            // 4. Conditional Rendering (Only AFTER all hooks are declared)
-            if (!data || data.length < 2) return (
-                <div className="h-full flex items-center justify-center text-xs text-gray-600 animate-pulse bg-[#0b0e11]" ref={containerRef}>
-                    正在初始化市場數據...
-                </div>
-            );
-
-            if (w === 0 || h === 0) return <div ref={containerRef} className="w-full h-full bg-[#0b0e11]" />;
-
-            // 5. Heavy Math & Rendering Logic (Post-guard)
-            const macdData = calculateMACDSeries(visibleData);
-
-            let minP = Infinity;
-            let maxP = -Infinity;
-            let maxVol = 0;
-            let minMacdLine = Infinity;
-            let maxMacdLine = -Infinity;
-            
-            visibleData.forEach(d => {
-                if (d.l < minP) minP = d.l;
-                if (d.h > maxP) maxP = d.h;
-                if (d.v > maxVol) maxVol = d.v;
-            });
-            
-            macdData.forEach(d => {
-                if (d.histogram !== null) {
-                    minMacdLine = Math.min(minMacdLine, d.macdLine, d.signalLine);
-                    maxMacdLine = Math.max(maxMacdLine, d.macdLine, d.signalLine);
-                }
-            });
-
-            minP = minP * 0.998;
-            maxP = maxP * 1.002;
-            const rangeP = maxP - minP || 1;
-            maxVol = maxVol || 1;
-            const rangeMACD = (maxMacdLine - minMacdLine) || 0.1;
-            
-            const getX = (i) => pL + i * candleWidth + candleWidth / 2;
-            const getY = (p) => Y_candles + H_candles - ((p - minP) / rangeP) * H_candles;
-            const getVolY = (v) => Y_volume + H_volume - (v / maxVol) * H_volume;
-            const getMacdY = (v) => Y_macd + H_macd - ((v - minMacdLine) / rangeMACD) * H_macd;
-            const getMacdZeroY = getMacdY(0); 
-
-            const ma5 = visibleData.map((d, i, arr) => {
-                if(i < 4) return null;
-                const sum = arr.slice(i-4, i+1).reduce((a,b) => a + b.c, 0);
-                return sum/5;
-            });
-            
-            const lastPrice = visibleData[visibleData.length-1].c;
-            const hoveredCandle = hoverIndex !== null ? visibleData[hoverIndex] : null;
-            const priceAtCursor = hoverIndex !== null 
-                ? minP + rangeP * ((Y_candles + H_candles - hoverCoords.y) / H_candles)
-                : null;
+                const parent = canvas.parentElement;
+                let width = parent.clientWidth;
+                let height = parent.clientHeight;
                 
+                // Set canvas dimensions to parent container size
+                canvas.width = width;
+                canvas.height = height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.clearRect(0, 0, width, height);
+
+                // Draw background
+                ctx.fillStyle = '#111827';
+                ctx.fillRect(0, 0, width, height);
+
+                // Draw horizontal line for $100.00 (mid-point for simplicity)
+                const yCenter = height * 0.5;
+                ctx.strokeStyle = '#3b82f6'; // Blue for the static price line
+                ctx.lineWidth = 1.5;
+                ctx.setLineDash([5, 5]); // Dashed line
+                ctx.beginPath();
+                ctx.moveTo(0, yCenter);
+                ctx.lineTo(width, yCenter);
+                ctx.stroke();
+
+                // Draw price label
+                ctx.setLineDash([]); // Solid line for text background
+                ctx.font = '10px Roboto Mono';
+                
+                // Draw a small black box behind the price label for contrast
+                ctx.fillStyle = '#111827';
+                ctx.fillRect(width - 50, yCenter - 8, 50, 16); 
+                
+                ctx.fillStyle = '#3b82f6';
+                ctx.textAlign = 'right';
+                ctx.fillText(`$${price.toFixed(2)}`, width - 5, yCenter + 4);
+
+                // Draw description text
+                ctx.fillStyle = '#9ca3af';
+                ctx.textAlign = 'center';
+                ctx.font = '12px sans-serif';
+                ctx.fillText('價格靜態 $100.00: 等待數據變動後開始繪製 K 線圖', width / 2, height / 2);
+
+            }, [price]); // Redraw when price changes (though it is static)
+
             return (
-                <div ref={containerRef} className="w-full h-full relative select-none bg-[#0b0e11]">
-                    <svg width={w} height={h} className="overflow-visible" onMouseMove={handleMouseMove} onMouseLeave={handleMouseLeave}>
-                        
-                        {/* Grid & Prices */}
-                        {[0, 0.25, 0.5, 0.75, 1].map(tick => {
-                            const p = minP + rangeP * tick;
-                            const y = getY(p);
-                            return (
-                                <g key={`grid-p-${tick}`}>
-                                    <line x1={pL} y1={y} x2={w-pR} y2={y} stroke="#1f2937" strokeDasharray="1 3"/>
-                                    <text x={w} y={y} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="middle" className="font-mono-num">{p.toFixed(2)}</text>
-                                </g>
-                            );
-                        })}
-
-                        {/* Candles */}
-                        {visibleData.map((d, i) => {
-                            const x = getX(i);
-                            const barW = Math.max(4, candleWidth * 0.7); 
-                            const isUp = d.c >= d.o;
-                            const color = isUp ? "#22c55e" : "#ef4444";
-                            const yHigh = getY(d.h);
-                            const yLow = getY(d.l);
-                            const yOpen = getY(d.o);
-                            const yClose = getY(d.c);
-                            
-                            return (
-                                <g key={`candle-${i}`}>
-                                    <line x1={x} y1={yHigh} x2={x} y2={yLow} stroke={color} strokeWidth="1" />
-                                    <rect x={x - barW/2} y={Math.min(yOpen, yClose)} width={barW} height={Math.max(Math.abs(yOpen - yClose), 1)} fill={color} />
-                                </g>
-                            )
-                        })}
-
-                        {/* MA5 */}
-                        <polyline 
-                            points={ma5.map((v, i) => v ? `${getX(i)},${getY(v)}` : null).filter(x=>x).join(' ')}
-                            fill="none" stroke="#fbbf24" strokeWidth="1.5" opacity="0.8"
-                        />
-                        
-                        {/* Current Price */}
-                        <line x1={pL} y1={getY(lastPrice)} x2={w-pR} y2={getY(lastPrice)} stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="4" opacity="0.8"/>
-                        <rect x={w-pR} y={getY(lastPrice)-8} width={pR} height={16} fill="#3b82f6" opacity="0.9"/>
-                        <text x={w-2} y={getY(lastPrice)} fontSize="10" fill="white" textAnchor="end" alignmentBaseline="middle" className="font-mono-num font-bold">{lastPrice.toFixed(2)}</text>
-
-                        {/* Volume */}
-                        <line x1={pL} y1={Y_volume-2} x2={w-pR} y2={Y_volume-2} stroke="#1f2937" strokeWidth="1"/>
-                        <text x={w} y={Y_volume} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging">成交量</text>
-                        <text x={w-2} y={Y_volume + 10} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging" className="font-mono-num">{maxVol.toLocaleString()}</text>
-                        {visibleData.map((d, i) => {
-                            const x = getX(i);
-                            const barW = Math.max(2, candleWidth * 0.7);
-                            const color = d.c >= d.o ? "#22c55e" : "#ef4444";
-                            const volH = (d.v / maxVol) * H_volume;
-                            return (
-                                <g key={`vol-${i}`}>
-                                    <rect x={x - barW/2} y={Y_volume + H_volume - volH} width={barW} height={volH} fill={color} opacity="0.7" />
-                                </g>
-                            )
-                        })}
-                        <line x1={pL} y1={Y_volume + H_volume} x2={w-pR} y2={Y_volume + H_volume} stroke="#1f2937" strokeWidth="1"/>
-
-                        {/* MACD */}
-                        <line x1={pL} y1={Y_macd-2} x2={w-pR} y2={Y_macd-2} stroke="#1f2937" strokeWidth="1"/>
-                        <text x={w} y={Y_macd} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging">MACD(12, 26, 9)</text>
-                        <line x1={pL} y1={getMacdZeroY} x2={w-pR} y2={getMacdZeroY} stroke="#6b7280" strokeWidth="1" strokeDasharray="2 2"/>
-                        <text x={w-2} y={Y_macd + 10} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging" className="font-mono-num">{maxMacdLine.toFixed(3)}</text>
-                        <text x={w-2} y={Y_macd + H_macd - 5} fontSize="10" fill="#6b7280" textAnchor="end" alignmentBaseline="hanging" className="font-mono-num">{minMacdLine.toFixed(3)}</text>
-
-                        {macdData.map((d, i) => {
-                            const x = getX(i);
-                            const barW = Math.max(2, candleWidth * 0.7);
-                            if(d.histogram === null) return null;
-                            const hY = getMacdY(d.macdLine - d.signalLine);
-                            const isUp = d.histogram >= 0;
-                            const color = isUp ? "#10b981" : "#f43f5e";
-                            return <line key={`macd-hist-${i}`} x1={x} y1={getMacdZeroY} x2={x} y2={hY} stroke={color} strokeWidth={barW} opacity="0.6"/>
-                        })}
-                        <polyline points={macdData.map((d, i) => d.macdLine !== null ? `${getX(i)},${getMacdY(d.macdLine)}` : null).filter(x=>x).join(' ')} fill="none" stroke="#3b82f6" strokeWidth="1.5"/>
-                        <polyline points={macdData.map((d, i) => d.signalLine !== null ? `${getX(i)},${getMacdY(d.signalLine)}` : null).filter(x=>x).join(' ')} fill="none" stroke="#f97316" strokeWidth="1.5"/>
-                        <text x={pL + 5} y={Y_macd + 10} fontSize="10" fill="#3b82f6" alignmentBaseline="hanging">MACD</text>
-                        <text x={pL + 40} y={Y_macd + 10} fontSize="10" fill="#f97316" alignmentBaseline="hanging">Signal</text>
-
-                        {/* Crosshair */}
-                        {hoverIndex !== null && hoverCoords.x >= pL && hoverCoords.x <= w - pR && (
-                            <g>
-                                <line x1={hoverCoords.x} y1={pT} x2={hoverCoords.x} y2={h-pB} stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" />
-                                <line x1={pL} y1={hoverCoords.y} x2={w-pR} y2={hoverCoords.y} stroke="#60a5fa" strokeWidth="1" strokeDasharray="2 2" />
-                                <rect x={w-pR} y={hoverCoords.y-8} width={pR} height={16} fill="#60a5fa" opacity="0.9"/>
-                                <text x={w-2} y={hoverCoords.y} fontSize="10" fill="white" textAnchor="end" alignmentBaseline="middle" className="font-mono-num font-bold">{priceAtCursor ? priceAtCursor.toFixed(2) : ''}</text>
-                            </g>
-                        )}
-                    </svg>
-                    
-                    {/* Info Box */}
-                    {hoveredCandle && (
-                        <div style={{ left: pL, top: pT }} className="absolute text-[10px] bg-gray-900/80 border border-blue-500/50 p-1 rounded-md shadow-lg font-mono pointer-events-none">
-                            <div className="text-blue-400 font-bold">K線數據</div>
-                            <div>O: <span className="text-white">{hoveredCandle.o.toFixed(2)}</span></div>
-                            <div>H: <span className="text-white">{hoveredCandle.h.toFixed(2)}</span></div>
-                            <div>L: <span className="text-white">{hoveredCandle.l.toFixed(2)}</span></div>
-                            <div>C: <span className="text-white">{hoveredCandle.c.toFixed(2)}</span></div>
-                            <div>V: <span className="text-yellow-400">{hoveredCandle.v.toLocaleString()}</span></div>
-                        </div>
-                    )}
-                    
-                    {/* Indicator Values */}
-                    {macdData.length > 0 && (
-                        <div className="absolute bottom-10 left-2 text-[10px] font-mono flex gap-3">
-                            <span className="text-yellow-500 font-bold">MA(5)</span>
-                            <span className="text-blue-500 font-bold">MACD: <span className="text-gray-200">{macdData[macdData.length-1].macdLine?.toFixed(3)}</span></span>
-                            <span className="text-orange-500 font-bold">Signal: <span className="text-gray-200">{macdData[macdData.length-1].signalLine?.toFixed(3)}</span></span>
-                            <span className={`font-bold ${macdData[macdData.length-1].histogram >= 0 ? 'text-teal-400' : 'text-rose-400'}`}>Hist: <span className="text-gray-200">{macdData[macdData.length-1].histogram?.toFixed(3)}</span></span>
-                        </div>
-                    )}
+                <div className="w-full h-full chart-container min-h-[180px] flex items-center justify-center">
+                    <canvas ref={canvasRef} className="w-full h-full" />
                 </div>
             );
-        });
+        };
 
+
+        // Market Depth / 各隊委託狀態區 (New Component)
+        const MarketDepth = ({ price }) => {
+            // Static depth levels based around the price 100.00
+            const mockLevels = useMemo(() => {
+                const levels = [];
+                const baseVolume = 1500;
+                
+                // 5 Bid levels (委買價 - Green/Inner Market)
+                for (let i = 0; i < 5; i++) {
+                    levels.push({
+                        price: price - 0.05 * (4 - i), // e.g., 99.80, 99.85, 99.90, 99.95, 100.00 (Note: price is 100.00 so highest bid is 99.95)
+                        qty: baseVolume + (i * 200) + (i % 2 === 0 ? 50 : -50),
+                        side: 'BID'
+                    });
+                }
+                // 5 Ask levels (委賣價 - Red/Outer Market)
+                for (let i = 0; i < 5; i++) {
+                    levels.push({
+                        price: price + 0.05 * (i + 1), // e.g., 100.05, 100.10, 100.15, 100.20, 100.25
+                        qty: baseVolume + (i * 150) + (i % 3 === 0 ? 100 : 0),
+                        side: 'ASK'
+                    });
+                }
+
+                // Sort and pair for 5 symmetrical rows
+                const bids = levels.filter(l => l.side === 'BID').sort((a, b) => b.price - a.price); // Highest bid first
+                const asks = levels.filter(l => l.side === 'ASK').sort((a, b) => a.price - b.price); // Lowest ask first
+
+                // Align bids and asks for 5 rows
+                const rows = bids.map((bid, index) => ({
+                    bid: bid,
+                    ask: asks[index]
+                }));
+
+                const allQtys = levels.map(l => l.qty);
+                const maxQty = Math.max(...allQtys);
+                const totalBidQty = bids.reduce((sum, b) => sum + b.qty, 0);
+                const totalAskQty = asks.reduce((sum, a) => sum + a.qty, 0);
+
+                return { rows, maxQty, totalBidQty, totalAskQty };
+            }, [price]);
+
+            const { rows, maxQty, totalBidQty, totalAskQty } = mockLevels;
+            const totalVol = totalBidQty + totalAskQty;
+            const bidPct = totalVol > 0 ? (totalBidQty / totalVol) * 100 : 50;
+            const askPct = totalVol > 0 ? (totalAskQty / totalVol) * 100 : 50;
+
+
+            return (
+                <div className="flex flex-col p-2 bg-gray-950/50 flex-1 overflow-y-auto">
+                    {/* Inner/Outer Market Header (內盤/外盤) */}
+                    <div className="flex flex-col mb-3 border-b border-gray-800 pb-2">
+                        <div className="flex justify-center text-xs font-bold font-sans">
+                            <span className="text-green-500 mr-2">
+                                內盤 <span className='font-mono-num'>{totalBidQty.toLocaleString()}</span>
+                                <span className="text-gray-400">({bidPct.toFixed(2)}%)</span>
+                            </span>
+                            <span className="text-red-500 ml-2">
+                                外盤 <span className='font-mono-num'>{totalAskQty.toLocaleString()}</span>
+                                <span className="text-gray-400">({askPct.toFixed(2)}%)</span>
+                            </span>
+                        </div>
+                        {/* Percentage Bar */}
+                        <div className="flex w-full h-2 mt-1 rounded overflow-hidden">
+                            <div className="bg-green-600 transition-all duration-300" style={{ width: `${bidPct}%` }}></div>
+                            <div className="bg-red-600 transition-all duration-300" style={{ width: `${askPct}%` }}></div>
+                        </div>
+                    </div>
+                    
+                    {/* Order Book Table */}
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                        <table className="w-full text-left text-[11px] border-collapse relative market-depth-table">
+                            <thead className="text-gray-500 sticky top-0 bg-gray-950/70 border-b border-gray-700">
+                                <tr>
+                                    <th className="text-right px-2 py-1">量</th>
+                                    <th className="text-right px-2 py-1">委買價</th>
+                                    <th className="text-left px-2 py-1">委賣價</th>
+                                    <th className="text-left px-2 py-1">量</th>
+                                </tr>
+                            </thead>
+                            <tbody className="font-mono-num divide-y divide-gray-900/50">
+                                {rows.map((r, index) => {
+                                    const bidWidthPct = (r.bid.qty / maxQty) * 100;
+                                    const askWidthPct = (r.ask.qty / maxQty) * 100;
+                                    
+                                    return (
+                                        <tr key={r.bid.price} className="h-[30px] transition-colors text-xs font-mono-num">
+                                            
+                                            {/* QTY (Bid) - Volume Bar is inside this cell, right aligned */}
+                                            <td className="relative w-1/4">
+                                                {/* Bid Bar Background (Right aligned, Green) */}
+                                                <div 
+                                                    className="absolute top-0 right-0 h-full bg-green-900/40 transition-all duration-300" 
+                                                    style={{ width: `${bidWidthPct}%` }}
+                                                />
+                                                <div className="relative-cell justify-end pr-2 text-green-300">
+                                                    <span className='z-10 relative'>{r.bid.qty.toLocaleString()}</span>
+                                                </div>
+                                            </td>
+                                            
+                                            {/* BID PRICE (委買價) */}
+                                            <td className="relative w-1/4">
+                                                <div className="relative-cell justify-end pr-2 text-green-400 font-bold">
+                                                    <span className='z-10 relative'>{r.bid.price.toFixed(2)}</span>
+                                                </div>
+                                            </td>
+                                            
+                                            {/* ASK PRICE (委賣價) - Volume Bar is inside this cell, left aligned */}
+                                            <td className="relative w-1/4">
+                                                {/* Ask Bar Background (Left aligned, Red) */}
+                                                <div 
+                                                    className="absolute top-0 left-0 h-full bg-red-900/40 transition-all duration-300" 
+                                                    style={{ width: `${askWidthPct}%` }}
+                                                />
+                                                <div className="relative-cell justify-start pl-2 text-red-400 font-bold">
+                                                    <span className='z-10 relative'>{r.ask.price.toFixed(2)}</span>
+                                                </div>
+                                            </td>
+                                            
+                                            {/* QTY (Ask) */}
+                                            <td className="relative w-1/4">
+                                                <div className="relative-cell justify-start pl-2 text-red-300">
+                                                    <span className='z-10 relative'>{r.ask.qty.toLocaleString()}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                            <tfoot className="sticky bottom-0 bg-gray-950/90 border-t border-gray-700 font-bold text-gray-500 text-xs">
+                                <tr>
+                                    <td colSpan="2" className="text-center">
+                                        <div className="flex justify-between items-center py-1 border-r border-gray-700">
+                                            <span className="pl-2">小計</span>
+                                            <span className="font-mono-num pr-2 text-green-400">{totalBidQty.toLocaleString()}</span>
+                                        </div>
+                                    </td>
+                                    <td colSpan="2" className="text-center">
+                                        <div className="flex justify-between items-center py-1">
+                                            <span className="pl-2 font-mono-num text-red-400">{totalAskQty.toLocaleString()}</span>
+                                            <span className="pr-2">小計</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            );
+        };
+        
+        // Order Entry Form
+        const OrderEntryForm = ({ order, selCode, account, setOrder, placeOrder, notify, setQtyByPct }) => {
+            const tradePrice = order.type === 'MARKET' ? STATIC_PRICE : parseFloat(order.price) || STATIC_PRICE;
+            const tradeQty = parseInt(order.qty) || 0;
+            const estimatedValue = tradePrice * tradeQty;
+
+            return (
+                <form onSubmit={placeOrder} className="p-4 border-b border-gray-800">
+                    <h3 className="text-white font-bold text-md mb-3 text-center border-b border-gray-700/50 pb-2">下單板: {selCode}</h3>
+                    
+                    {/* Buy/Sell Toggles */}
+                    <div className="flex gap-2 mb-3">
+                        <button type="button" onClick={() => setOrder(p => ({ ...p, side: 'BUY' }))} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${order.side === 'BUY' ? 'bg-green-600 text-white shadow-md shadow-green-900/50' : 'bg-gray-700 text-gray-300 hover:bg-green-700/50'}`}>
+                            買入 (BUY)
+                        </button>
+                        <button type="button" onClick={() => setOrder(p => ({ ...p, side: 'SELL' }))} className={`flex-1 py-2 rounded-md font-bold text-sm transition-colors ${order.side === 'SELL' ? 'bg-red-600 text-white shadow-md shadow-red-900/50' : 'bg-gray-700 text-gray-300 hover:bg-red-700/50'}`}>
+                            賣出 (SELL)
+                        </button>
+                    </div>
+
+                    {/* Order Type & TIF */}
+                    <div className="flex gap-2 mb-3">
+                        <select value={order.type} onChange={e => setOrder(p => ({ ...p, type: e.target.value }))} className="flex-1 bg-gray-800 border border-gray-700 rounded p-1 text-gray-300 outline-none text-xs">
+                            <option value="LIMIT">限價</option>
+                            <option value="MARKET">市價</option>
+                        </select>
+                        <select value={order.tif} onChange={e => setOrder(p => ({ ...p, tif: e.target.value }))} className="w-1/3 bg-gray-800 border border-gray-700 rounded p-1 text-gray-300 outline-none text-xs">
+                            <option value="DAY">當日</option>
+                            <option value="IOC">IOC</option>
+                            <option value="FOK">FOK</option>
+                        </select>
+                    </div>
+
+                    {/* Quantity Input */}
+                    <label className="block text-gray-500 mb-1 text-xs">數量 (QTY)</label>
+                    <input type="number" min="1" step="1" value={order.qty} onChange={e => setOrder(p => ({ ...p, qty: e.target.value }))} placeholder="數量" className="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-white font-mono-num outline-none focus:border-blue-500 mb-2 text-xs"/>
+                    <div className="flex gap-1 mb-3">
+                        {[0.1, 0.25, 0.5, 1].map(pct => (
+                            <button key={pct} type="button" onClick={() => setQtyByPct(pct)} className="flex-1 bg-gray-700 text-gray-400 hover:bg-gray-600/50 rounded py-0.5 text-[9px]">
+                                {pct*100}% 現金
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Price Input (Conditional) */}
+                    {order.type === 'LIMIT' && (
+                        <>
+                            <label className="block text-gray-500 mb-1 text-xs">價格 (PRICE)</label>
+                            <input type="number" step="0.01" value={order.price} onChange={e => setOrder(p => ({ ...p, price: e.target.value }))} placeholder={STATIC_PRICE.toFixed(2)} className="w-full bg-gray-800 border border-gray-700 rounded p-1.5 text-white font-mono-num outline-none focus:border-blue-500 mb-3 text-xs"/>
+                        </>
+                    )}
+
+                    {/* Estimated Value */}
+                    <div className="flex justify-between text-sm mb-3 border-t border-gray-800 pt-3">
+                        <span className="text-gray-500">預計價值:</span>
+                        <span className="text-yellow-400 font-mono-num font-bold">{fmtUSD(estimatedValue)}</span>
+                    </div>
+
+                    {/* Submit Button */}
+                    <button type="submit" className={`w-full py-2 rounded-md font-bold transition-all text-sm ${order.side === 'BUY' ? 'bg-green-600 hover:bg-green-500' : 'bg-red-600 hover:bg-red-500'} text-white shadow-xl shadow-gray-900/50`}>
+                        提交 {order.side} 訂單
+                    </button>
+                </form>
+            );
+        }
 
         // --- MAIN APP ---
         function App() {
-            // State
+            // State initialization... (same as before)
             const [time, setTime] = useState(new Date());
-            const [stocks, setStocks] = useState(INITIAL_DATA.map(s => ({ ...s, price: s.p, refPrice: s.p, high: s.p, low: s.p, open: s.p, vol: 0, change: 0, pct: 0 })));
-            const [selCode, setSelCode] = useState('NYY');
+            const [stocks, setStocks] = useState(INITIAL_DATA.map(s => ({ 
+                ...s, 
+                price: STATIC_PRICE, 
+                refPrice: STATIC_PRICE, 
+                high: STATIC_PRICE, 
+                low: STATIC_PRICE, 
+                open: STATIC_PRICE, 
+                vol: 0, 
+                change: 0, 
+                pct: 0 
+            })));
+            const [selCode, setSelCode] = useState('ARI'); 
             
-            // History: { Code: { '1S': [], '1M': [], current1M: {} } }
-            const [history, setHistory] = useState({}); 
-            const [chartInterval, setChartInterval] = useState('1M'); 
-
             // Account State 
             const [account, setAccount] = useState({ 
                 cash: INITIAL_CASH, 
@@ -419,186 +421,54 @@
             });
             const [pos, setPos] = useState([]);
             const [orders, setOrders] = useState([]);
-            const [aiOpen, setAiOpen] = useState(false);
-            const [lastTradeDir, setLastTradeDir] = useState(null); // 'BUY' or 'SELL' for visual feedback
             
             // Order Entry State
             const [order, setOrder] = useState({ side: 'BUY', type: 'LIMIT', tif: 'DAY', qty: '', price: '' });
             const [msg, setMsg] = useState(null);
-            const priceFlashRef = useRef(null);
             
             // New State for Filtering
             const [searchQuery, setSearchQuery] = useState('');
 
-            // Filtered Stocks for Watchlist (New Feature)
-            const filteredStocks = useMemo(() => {
-                if (!searchQuery) return stocks;
-                const query = searchQuery.toLowerCase();
-                return stocks.filter(s => 
-                    s.c.toLowerCase().includes(query) || 
-                    s.n.toLowerCase().includes(query)
-                );
-            }, [stocks, searchQuery]);
-
-            // --- ENGINE: TICK & CANDLE GENERATION ---
+            // Time update for header only
             useEffect(() => {
-                // Initial data setup (same as before)
-                const initHist = {};
-                stocks.forEach(s => {
-                    // Mock 1S Data (Used for continuous updates)
-                    const h1s = [];
-                    let p = s.p;
-                    for(let i=0; i<100; i++) {
-                        let o = p;
-                        let c = o * (1 + (Math.random()-0.5)*0.002);
-                        let h = Math.max(o, c) * (1 + Math.random()*0.0005);
-                        let l = Math.min(o, c) * (1 - Math.random()*0.0005);
-                        h1s.push({ o:parseFloat(o.toFixed(2)), h:parseFloat(h.toFixed(2)), l:parseFloat(l.toFixed(2)), c:parseFloat(c.toFixed(2)), v: Math.floor(Math.random()*1000), time: Date.now()-(100-i)*1000 });
-                        p = c;
-                    }
-                    // Mock 1M Data
-                    const h1m = [];
-                    p = s.p * 0.95; 
-                    for(let i=0; i<60; i++) {
-                        let o = p;
-                        let c = o * (1 + (Math.random()-0.5)*0.01);
-                        let h = Math.max(o, c) * (1 + Math.random()*0.002);
-                        let l = Math.min(o, c) * (1 - Math.random()*0.002);
-                        h1m.push({ o:parseFloat(o.toFixed(2)), h:parseFloat(h.toFixed(2)), l:parseFloat(l.toFixed(2)), c:parseFloat(c.toFixed(2)), v: Math.floor(Math.random()*50000), time: Date.now()-(60-i)*60000 });
-                        p = c;
-                    }
-
-                    initHist[s.c] = { 
-                        '1S': h1s, '1M': h1m,
-                        current1M: { o: s.p, h: s.p, l: s.p, c: s.p, v: 0, startTime: Date.now() }
-                    };
-                });
-                setHistory(initHist);
-
-                // --- SIMULATION LOOP (1000ms) ---
                 const interval = setInterval(() => {
                     setTime(new Date());
-                    
-                    setStocks(prevStocks => {
-                        const updatedStocks = prevStocks.map(s => {
-                            let newVol = 0;
-                            let np = s.price;
-                            let moveDir = 0; // -1: down, 0: flat, 1: up
-                            
-                            if(Math.random() > 0.1) { // 90% chance of a tick
-                                const move = (Math.random() - 0.5) * 0.05; 
-                                np = s.price + move;
-                                np = Math.round(np * 100) / 100;
-                                newVol = Math.floor(Math.random() * 200);
-                                moveDir = np > s.price ? 1 : np < s.price ? -1 : 0;
-                            }
-
-                            if (s.c === selCode && moveDir !== 0) {
-                                // Trigger flash effect for the actively viewed stock
-                                setLastTradeDir(moveDir > 0 ? 'BUY' : 'SELL');
-                                setTimeout(() => setLastTradeDir(null), 200);
-                            }
-
-                            return {
-                                ...s,
-                                price: np,
-                                high: Math.max(s.high, np),
-                                low: Math.min(s.low, np),
-                                vol: s.vol + newVol,
-                                change: np - s.refPrice, 
-                                pct: (np - s.refPrice)/s.refPrice * 100,
-                                lastVol: newVol 
-                            };
-                        });
-
-                        // Candle Update Logic (simplified for brevity, focusing on the MACD/EMA requirement)
-                        setHistory(prevHist => {
-                            const newHist = { ...prevHist };
-                            const now = Date.now();
-
-                            updatedStocks.forEach(s => {
-                                if (!newHist[s.c]) return;
-
-                                // 1S Update
-                                const last1S = newHist[s.c]['1S'][newHist[s.c]['1S'].length - 1];
-                                const open1S = last1S ? last1S.c : s.price;
-                                const new1S = { o: open1S, h: Math.max(open1S, s.price), l: Math.min(open1S, s.price), c: s.price, v: s.lastVol, time: now };
-                                newHist[s.c]['1S'] = [...newHist[s.c]['1S'], new1S].slice(-120); 
-
-                                // 1M Accumulate/Close
-                                let cur1M = { ...newHist[s.c].current1M };
-                                
-                                if (now - cur1M.startTime >= 60000) {
-                                    newHist[s.c]['1M'] = [...newHist[s.c]['1M'], cur1M].slice(-100);
-                                    cur1M = { o: s.price, h: s.price, l: s.price, c: s.price, v: s.lastVol, startTime: now };
-                                } else {
-                                    cur1M.h = Math.max(cur1M.h, s.price);
-                                    cur1M.l = Math.min(cur1M.l, s.price);
-                                    cur1M.c = s.price;
-                                    cur1M.v += s.lastVol;
-                                }
-                                newHist[s.c].current1M = cur1M;
-                            });
-                            return newHist;
-                        });
-
-                        return updatedStocks;
-                    });
                 }, 1000);
                 return () => clearInterval(interval);
-            }, [selCode]); // Include selCode for flash logic
+            }, []);
 
-            // --- MATCHING & P/L ENGINE (Unchanged but crucial for netLiq) ---
-            useEffect(() => {
-                setOrders(prev => {
-                    let dirty = false;
-                    const next = prev.map(o => {
-                        if(o.status !== 'PENDING') return o;
-                        const s = stocks.find(x => x.c === o.code);
-                        if(!s) return o;
-                        
-                        // Fill logic is simplified for demo
-                        const fill = (o.side === 'BUY' && s.price <= o.price) || (o.side === 'SELL' && s.price >= o.price);
-                        if (fill || o.type === 'MARKET') {
-                            dirty = true;
-                            const fillPrice = o.type === 'MARKET' ? s.price : (o.side === 'BUY' ? Math.min(o.price, s.price) : Math.max(o.price, s.price));
-                            executeTrade(o, fillPrice);
-                            return { ...o, status: 'FILLED', fillPrice: fillPrice };
-                        }
-                        return o;
-                    });
-                    return dirty ? next : prev;
-                });
-            }, [stocks]);
-
+            // --- P/L ENGINE (Runs on Cash/Position change) ---
             useEffect(() => {
                 let uplTotal = 0;
 
                 setPos(prev => prev.map(p => {
-                    const s = stocks.find(x => x.c === p.code);
-                    if(!s) return p;
-                    
+                    // Current mark price is always STATIC_PRICE (無價格變動)
+                    const markPrice = STATIC_PRICE; 
                     const absQty = Math.abs(p.qty);
-                    const upl = p.qty > 0 ? (s.price - p.avg) * p.qty : (p.avg - s.price) * absQty;
+                    // P/L is based on avg cost vs static mark price.
+                    const upl = p.qty > 0 ? (markPrice - p.avg) * p.qty : (p.avg - markPrice) * absQty;
                     uplTotal += upl;
 
-                    return { ...p, mark: s.price, mktVal: absQty * s.price, upl, uplPct: (upl / (p.avg * absQty)) * 100 };
+                    // uplPct calculation is retained for completeness
+                    const uplPct = absQty > 0 ? (upl / (p.avg * absQty)) * 100 : 0;
+
+                    return { ...p, mark: markPrice, mktVal: absQty * markPrice, upl, uplPct };
                 }));
 
-                // Net Liq and Day P/L logic is CRITICAL for the user's request
                 setAccount(a => {
                     const newNetLiq = a.cash + uplTotal; 
                     const dayPL = newNetLiq - INITIAL_CASH; 
                     return { ...a, uplTotal, netLiq: newNetLiq, dayPL };
                 });
 
-            }, [stocks, account.cash]); // Depend on account.cash to ensure accurate netLiq updates after trades
+            }, [account.cash]); 
 
             // --- ACTIONS ---
             const executeTrade = (ord, price) => {
                 const tradeQty = parseInt(ord.qty);
                 const tradeAmt = price * tradeQty;
-                const comm = Math.max(1, tradeQty * 0.005); 
+                // Mock commission: 0.5% of value, minimum 1.00
+                const comm = Math.max(1.00, tradeAmt * 0.005); 
                 const isBuy = ord.side === 'BUY';
                 const transactionCostOrProceeds = isBuy ? -tradeAmt - comm : tradeAmt - comm;
                 let realizedPL = 0;
@@ -614,6 +484,7 @@
 
                         if (isClosing) {
                             const closeQty = Math.min(tradeQty, Math.abs(exQty));
+                            
                             if (exQty > 0) { // Closing Long with SELL
                                 realizedPL = (price - ex.avg) * closeQty;
                             } else { // Closing Short with BUY
@@ -625,16 +496,17 @@
                             if (Math.abs(remainingQty) < 1) {
                                 nextPos = prev.filter((p, i) => i !== exIndex);
                             } else {
-                                // Remaining is a new position on the opposite side (reversal)
-                                const newOpenQty = Math.abs(remainingQty);
-                                const newAvg = price; 
+                                // Reversal: calculate new average based on remaining and new shares
+                                const netValue = (ex.avg * Math.abs(exQty)) + (price * (isBuy ? tradeQty : -tradeQty));
+                                const netShares = remainingQty;
+                                const newAvg = netValue / Math.abs(netShares);
                                 nextPos = prev.filter((p, i) => i !== exIndex);
                                 nextPos.push({ 
                                     code: ord.code, 
-                                    qty: remainingQty, // The sign is correct
+                                    qty: netShares, 
                                     avg: newAvg, 
                                     mark: price, 
-                                    mktVal: newOpenQty * price, 
+                                    mktVal: Math.abs(netShares) * price, 
                                     upl: 0, 
                                     uplPct: 0 
                                 });
@@ -646,21 +518,21 @@
                             nextPos[exIndex] = { ...ex, qty: newTotalQty, avg: newAvg };
                         }
                     } else if (tradeQty > 0) {
-                        // New position
+                        // Opening a new position
                         nextPos.push({ 
                             code: ord.code, 
                             qty: isBuy ? tradeQty : -tradeQty, 
                             avg: price, 
                             mark: price, 
                             mktVal: tradeAmt, 
-                            upl: -comm, 
+                            upl: -comm, // Initial P/L is the commission
                             uplPct: 0 
                         });
                     }
                     return nextPos;
                 });
 
-                // Crucial: Cash update includes realized P/L
+                // Cash update includes transaction cost/proceeds and realized P/L
                 setAccount(a => ({ 
                     ...a, 
                     cash: a.cash + transactionCostOrProceeds + realizedPL, 
@@ -671,29 +543,30 @@
 
             const placeOrder = (e) => {
                 e.preventDefault();
-                const s = stocks.find(x => x.c === selCode);
-                const price = order.type === 'MARKET' ? s.price : parseFloat(order.price);
+                const staticPrice = STATIC_PRICE;
+                const price = order.type === 'MARKET' ? staticPrice : parseFloat(order.price);
                 const qty = parseInt(order.qty);
                 const currentCash = account.cash;
                 
                 if(!qty || qty <= 0) return notify("無效數量", "error");
                 if(order.type==='LIMIT' && (!price || price <= 0)) return notify("無效價格", "error");
 
-                const requiredFunds = order.side === 'BUY' ? price * qty : 0; 
+                const requiredFunds = order.side === 'BUY' ? staticPrice * qty : 0; 
                 if (order.side === 'BUY' && requiredFunds > currentCash) return notify("購買力不足 (現金不足)", "error");
 
+                // New order object
                 const newOrd = { id: Math.random().toString(36).substr(2,9), time: new Date().toLocaleTimeString(), code: selCode, ...order, price, status: 'PENDING', fillPrice: 0 };
 
-                const fill = order.type === 'MARKET' || (order.side==='BUY' && s.price <= price) || (order.side==='SELL' && s.price >= price);
+                // Instant Fill Logic (Static Market)
+                const fill = order.type === 'MARKET' || (order.type === 'LIMIT' && price === staticPrice);
                 
-                if ((order.tif === 'IOC' || order.tif === 'FOK') && !fill) {
-                    notify("訂單已取消 (缺乏流動性)", "info");
-                } else if (fill) {
-                    const fillPrice = order.type === 'MARKET' ? s.price : (order.side === 'BUY' ? Math.min(price, s.price) : Math.max(price, s.price));
-                    executeTrade(newOrd, fillPrice);
+                if (fill) {
+                    executeTrade(newOrd, staticPrice);
+                } else if ((order.tif === 'IOC' || order.tif === 'FOK')) {
+                    notify("訂單已取消 (缺乏流動性或價格不符)", "info");
                 } else {
                     setOrders([newOrd, ...orders]);
-                    notify("訂單已提交");
+                    notify("訂單已提交 (待市場價格觸發)");
                 }
             };
 
@@ -710,45 +583,20 @@
             // --- DERIVED ---
             const selStock = stocks.find(s => s.c === selCode) || stocks[0];
             const activeOrders = orders.filter(o => o.status === 'PENDING');
-            const currentPos = pos.find(p => p.code === selCode);
             
-            let displayData = [];
-            if (history[selCode]) {
-                if (chartInterval === '1S') {
-                    displayData = history[selCode]['1S'];
-                } else {
-                    displayData = [...history[selCode]['1M'], history[selCode].current1M];
-                }
-            }
-
-            const tradePrice = order.type === 'MARKET' ? selStock.price : parseFloat(order.price) || selStock.price;
-            const tradeQty = parseInt(order.qty) || 0;
-            const estimatedValue = tradePrice * tradeQty;
-
             const setQtyByPct = (pct) => {
-                const s = stocks.find(x => x.c === selCode);
-                const p = order.price || s.price;
-                const max = Math.floor(account.cash / p);
+                const max = Math.floor(account.cash / STATIC_PRICE);
                 setOrder(prev => ({ ...prev, qty: Math.floor(max * pct) }));
             };
 
-            // Simulated Depth & Bid/Ask Logic
-            const MaxDepthSize = 4000;
-            const generateDepth = (basePrice, isBid) => {
-                const depth = [];
-                for(let i=1; i<=5; i++) {
-                    const price = isBid ? basePrice - i * 0.01 : basePrice + i * 0.01;
-                    const size = Math.floor(Math.random() * 1000) + 100 * (6 - i); 
-                    depth.push({ price: parseFloat(price.toFixed(2)), size: size });
-                }
-                return depth;
-            };
-            const bids = generateDepth(selStock.price, true).sort((a,b) => b.price - a.price).slice(0, 5);
-            const asks = generateDepth(selStock.price, false).sort((a,b) => a.price - b.price).slice(0, 5);
-
-            // Spread
-            const spread = asks.length > 0 && bids.length > 0 ? (asks[0].price - bids[0].price).toFixed(2) : 'N/A';
-            const tickFlashClass = lastTradeDir === 'BUY' ? 'flash-green' : lastTradeDir === 'SELL' ? 'flash-red' : '';
+            const filteredStocks = useMemo(() => {
+                if (!searchQuery) return stocks;
+                const query = searchQuery.toLowerCase();
+                return stocks.filter(s => 
+                    s.c.toLowerCase().includes(query) || 
+                    s.n.toLowerCase().includes(query)
+                );
+            }, [stocks, searchQuery]);
 
 
             return (
@@ -757,7 +605,7 @@
                     <header className="bg-gray-900 border-b border-gray-800 h-10 flex items-center justify-between px-3 shrink-0">
                         <div className="flex items-center gap-3">
                             <Icons.Settings className="text-blue-500"/>
-                            <span className="font-bold text-gray-100 tracking-wide">PRO<span className="text-blue-500">TRADER</span> <span className="text-gray-600 text-[10px]">Enhanced</span></span>
+                            <span className="font-bold text-gray-100 tracking-wide">PRO<span className="text-blue-500">TRADER</span> <span className="text-gray-600 text-[10px]">版面交換 v4</span></span>
                         </div>
                         <div className="flex gap-6 font-mono-num text-xs">
                             <div className="flex flex-col md:flex-row md:gap-2 items-end md:items-center">
@@ -774,16 +622,16 @@
                             </div>
                         </div>
                         <div className="flex items-center gap-2 text-[10px] text-gray-500">
-                            <Icons.Wifi className="text-green-500" size={12}/>
-                            <span>連線中</span>
+                            <Icons.Wifi className="text-gray-500" size={12}/>
+                            <span>靜態連線</span>
                             <span className="font-mono text-gray-400">{time.toLocaleTimeString()}</span>
                         </div>
                     </header>
 
-                    {/* --- MAIN DASHBOARD --- */}
+                    {/* --- MAIN DASHBOARD (3-Column Layout) --- */}
                     <div className="flex-1 flex overflow-hidden bg-[#0b0e11]">
                         
-                        {/* 1. WATCHLIST (Left) - Now with Filtering */}
+                        {/* 1. WATCHLIST (Left) - MLB Teams */}
                         <div className="w-60 flex flex-col border-r border-gray-800 bg-gray-900/50">
                             <div className="p-2 border-b border-gray-800">
                                 <div className="relative">
@@ -797,15 +645,21 @@
                                 </div>
                             </div>
                             <div className="flex-1 overflow-y-auto">
+                                <div className="flex justify-between items-center px-3 py-1 bg-gray-900 border-b border-gray-700 text-gray-500 text-[10px] uppercase font-bold sticky top-0">
+                                    <span>代碼/名稱</span>
+                                    <span>市價 (靜態)</span>
+                                </div>
                                 {filteredStocks.map(s => (
                                     <div key={s.c} onClick={() => setSelCode(s.c)} className={`px-3 py-2 border-b border-gray-800/50 cursor-pointer hover:bg-gray-800 group ${selCode===s.c ? 'bg-blue-900/20 border-l-2 border-l-blue-500' : 'border-l-2 border-l-transparent'}`}>
                                         <div className="flex justify-between items-center">
                                             <span className="font-bold text-gray-200">{s.c}</span>
-                                            <span className={`font-mono-num ${col(s.change)}`}>{s.price.toFixed(2)}</span>
+                                            <div className="flex flex-col items-end">
+                                                <span className="font-mono-num text-gray-200 text-sm">{s.price.toFixed(2)}</span>
+                                                <span className={`text-[9px] ${col(s.change)}`}>{s.change.toFixed(2)} ({s.pct.toFixed(2)}%)</span>
+                                            </div>
                                         </div>
-                                        <div className="flex justify-between text-[10px] text-gray-500 mt-0.5">
-                                            <span className="truncate w-20">{s.n}</span>
-                                            <span className={`${col(s.change)} group-hover:text-white`}>{fmtPct(s.pct)}</span>
+                                        <div className="text-[10px] text-gray-500 mt-0.5">
+                                            <span className="truncate">{s.n}</span>
                                         </div>
                                     </div>
                                 ))}
@@ -815,248 +669,126 @@
                             </div>
                         </div>
 
-                        {/* 2. CHART & DATA PANELS (Center) */}
-                        <div className="flex-1 flex flex-col min-w-0 border-r border-gray-800">
-                            {/* Chart Header - Added Tick Flash Class */}
-                            <div className="h-12 border-b border-gray-800 flex justify-between items-center px-4 bg-gray-900/30">
-                                <div>
-                                    <span className="text-xl font-bold text-white mr-2">{selStock.c}</span>
-                                    <span className="text-xs text-gray-500 mr-4">{selStock.n}</span>
-                                    {/* Price with Tick Flash */}
-                                    <span ref={priceFlashRef} className={`text-lg font-mono-num font-bold transition-all ${col(selStock.change)} ${tickFlashClass}`}>{selStock.price.toFixed(2)}</span>
-                                    <span className={`ml-2 text-xs font-mono-num ${col(selStock.change)}`}>{fmtPct(selStock.pct)}</span>
+                        {/* 2. MARKET DATA (Center) - Quote Header, K-Line, Market Depth */}
+                        <div className="flex-1 flex flex-col min-w-0 border-r border-gray-800 bg-gray-900/30">
+                            
+                            {/* Detailed Quote Header */}
+                            <div className="p-3 border-b border-gray-800 bg-gray-900/50 shrink-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xl font-bold text-white">{selStock.c}</span>
+                                    <span className="text-xs text-gray-500">{selStock.n}</span>
                                 </div>
                                 
-                                <div className="flex items-center gap-4">
-                                    {/* Timeframe Selector */}
-                                    <div className="flex bg-gray-800 rounded p-0.5 border border-gray-700">
-                                        <button onClick={()=>setChartInterval('1S')} className={`px-2 py-0.5 text-[10px] rounded font-bold ${chartInterval==='1S'?'bg-blue-600 text-white hover:bg-blue-500':'text-gray-400 hover:text-gray-300'}`}>1S</button>
-                                        <button onClick={()=>setChartInterval('1M')} className={`px-2 py-0.5 text-[10px] rounded font-bold ${chartInterval==='1M'?'bg-blue-600 text-white hover:bg-blue-500':'text-gray-400 hover:text-gray-300'}`}>1M</button>
+                                <div className="flex items-end justify-between">
+                                    <div className="flex flex-col">
+                                        <span className="text-4xl font-mono-num font-bold text-gray-200">
+                                            {selStock.price.toFixed(2)}
+                                        </span>
+                                        <span className={`text-sm font-mono-num ${col(selStock.change)}`}>
+                                            {selStock.change.toFixed(2)} ({selStock.pct.toFixed(2)}%)
+                                        </span>
                                     </div>
                                     
-                                    <div className="flex gap-4 text-xs font-mono text-gray-500 border-l border-gray-700 pl-4">
-                                        <div>高: <span className="text-gray-300">{selStock.high.toFixed(2)}</span></div>
-                                        <div>低: <span className="text-gray-300">{selStock.low.toFixed(2)}</span></div>
-                                        <div>量: <span className="text-gray-300">{selStock.vol.toLocaleString()}</span></div>
+                                    {/* Quote Details Table */}
+                                    <div className="grid grid-cols-3 gap-x-4 gap-y-1 text-xs text-gray-500 font-mono-num">
+                                        <span className="text-gray-600">開盤:</span><span className="text-right text-gray-300">{selStock.open.toFixed(2)}</span>
+                                        <span className="text-gray-600">成交量:</span><span className="text-right text-gray-300">{selStock.vol}</span>
+                                        <span className="text-gray-600">最高:</span><span className="text-right text-gray-300">{selStock.high.toFixed(2)}</span>
+                                        <span className="text-gray-600">最低:</span><span className="text-right text-gray-300">{selStock.low.toFixed(2)}</span>
+                                        <span className="text-gray-600">參考價:</span><span className="text-right text-gray-300">{selStock.refPrice.toFixed(2)}</span>
                                     </div>
                                 </div>
+                            </div>
+
+                            {/* K-Line Chart Area (K線圖) */}
+                            <div className="h-48 border-b border-gray-800 bg-gray-950 flex items-center justify-center p-2 shrink-0">
+                                <KLineChart price={selStock.price} />
                             </div>
                             
-                            {/* Chart Container */}
-                            <div className="flex-1 relative bg-[#0b0e11]">
-                                <CandlestickChart data={displayData} interval={chartInterval} />
+                            {/* Market Depth / 各隊委託狀態區 */}
+                            <div className="flex-1 flex flex-col min-h-0">
+                                <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2 shrink-0">
+                                    各隊委託狀態區 (Market Depth)
+                                </div>
+                                <MarketDepth price={selStock.price} />
                             </div>
 
-                            {/* Bottom Split: Positions & Orders (Unchanged) */}
-                            <div className="h-1/3 min-h-[200px] border-t border-gray-800 flex">
-                                <div className="flex-1 border-r border-gray-800 flex flex-col bg-gray-900/20">
-                                    <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2">
-                                        <Icons.Briefcase size={12}/> 部位 (Positions)
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto">
-                                        <table className="w-full text-left text-[11px]">
-                                            <thead className="text-gray-500 sticky top-0 bg-[#0b0e11]">
-                                                <tr><th className="pl-3 py-1">代碼</th><th className="text-right">數量</th><th className="text-right">成本</th><th className="text-right">現價</th><th className="text-right pr-3">未實現P/L</th></tr>
-                                            </thead>
-                                            <tbody className="font-mono-num divide-y divide-gray-800/50">
-                                                {pos.map(p => (
-                                                    <tr key={p.code} className="hover:bg-gray-800/30 cursor-pointer" onClick={() => setSelCode(p.code)}>
-                                                        <td className="pl-3 py-1 text-gray-300 font-bold">{p.code}</td>
-                                                        <td className={`text-right ${p.qty>0?'text-green-400':'text-red-400'}`}>{p.qty}</td>
-                                                        <td className="text-right text-gray-500">{p.avg.toFixed(2)}</td>
-                                                        <td className="text-right text-gray-300">{p.mark.toFixed(2)}</td>
-                                                        <td className={`text-right pr-3 ${col(p.upl)}`}>{p.upl.toFixed(2)}</td>
-                                                    </tr>
-                                                ))}
-                                                {pos.length === 0 && <tr><td colSpan="5" className="text-center py-4 text-gray-600 italic">無持有部位</td></tr>}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-
-                                <div className="flex-1 flex flex-col bg-gray-900/20">
-                                    <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2">
-                                        委託單 (Working Orders)
-                                    </div>
-                                    <div className="flex-1 overflow-y-auto">
-                                        <table className="w-full text-left text-[11px]">
-                                            <thead className="text-gray-500 sticky top-0 bg-[#0b0e11]">
-                                                <tr><th>時間</th><th>方向</th><th>代碼</th><th className="text-right">價格</th><th className="text-right">數量</th><th className="text-center pr-2">取消</th></tr>
-                                            </thead>
-                                            <tbody className="font-mono-num divide-y divide-gray-800/50">
-                                                {activeOrders.map(o => (
-                                                    <tr key={o.id} className="hover:bg-gray-800/30">
-                                                        <td className="pl-3 py-1 text-gray-500">{o.time.split(' ')[0]}</td>
-                                                        <td className={o.side==='BUY'?'text-green-500':'text-red-500'}>{o.side==='BUY'?'買':'賣'}</td>
-                                                        <td className="text-gray-300">{o.code}</td>
-                                                        <td className="text-right">{o.type==='MARKET'?'MKT':o.price.toFixed(2)}</td>
-                                                        <td className="text-right text-white">{o.qty}</td>
-                                                        <td className="text-center pr-2">
-                                                            <button onClick={()=>cancelOrder(o.id)} className="text-gray-600 hover:text-red-400"><Icons.X size={12}/></button>
-                                                        </td>
-                                                    </tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </div>
-                            </div>
                         </div>
 
-                        {/* 3. ORDER ENTRY & DEPTH (Right - Fixed Width) */}
-                        <div className="w-72 flex flex-col bg-gray-900/80 border-l border-gray-800">
+                        {/* 3. TRADING CONTROLS (Right) - Order Entry, Positions, Orders */}
+                        <div className="w-72 flex flex-col shrink-0 bg-gray-900/70">
                             
-                            {/* Level 2 DOM (Redesigned - Parallel 5 Levels) */}
-                            <div className="flex-1 flex flex-col overflow-hidden border-b border-gray-800 dom-container">
-                                {/* Header */}
-                                <div className="flex h-6 bg-gray-950 text-[10px] text-gray-500 font-bold uppercase border-b border-gray-800">
-                                    <div className="flex-1 flex items-center px-2 border-r border-gray-800">
-                                        <span className="w-12 text-left">量</span>
-                                        <span className="flex-1 text-right">買價</span>
-                                    </div>
-                                    <div className="flex-1 flex items-center px-2">
-                                        <span className="flex-1 text-left">賣價</span>
-                                        <span className="w-12 text-right">量</span>
-                                    </div>
+                            {/* Order Entry Form */}
+                            <OrderEntryForm 
+                                order={order} 
+                                selCode={selCode} 
+                                account={account} 
+                                setOrder={setOrder} 
+                                placeOrder={placeOrder} 
+                                notify={notify} 
+                                setQtyByPct={setQtyByPct}
+                            />
+                            
+                            {/* Positions */}
+                            <div className="flex flex-col border-b border-gray-800 min-h-0 flex-1">
+                                <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2 shrink-0">
+                                    <Icons.Briefcase size={12}/> 部位 (Positions)
                                 </div>
-
-                                {/* Rows */}
-                                <div className="flex-1 bg-[#0b0e11] overflow-y-auto">
-                                    {Array.from({ length: 5 }).map((_, i) => {
-                                        const bid = bids[i];
-                                        const ask = asks[i];
-                                        
-                                        // Calc widths for bars
-                                        const bidW = Math.min((bid.size / MaxDepthSize) * 100, 100);
-                                        const askW = Math.min((ask.size / MaxDepthSize) * 100, 100);
-
-                                        return (
-                                            <div key={i} className="flex h-6 border-b border-gray-800/30 text-xs font-mono">
-                                                {/* Bid Side */}
-                                                <div 
-                                                    className="flex-1 flex items-center relative cursor-pointer hover:bg-gray-800 border-r border-gray-800/30 overflow-hidden"
-                                                    onClick={() => setOrder(p => ({ ...p, price: bid.price.toFixed(2), type: 'LIMIT', side: 'BUY' }))}
-                                                >
-                                                    {/* Depth Bar (Left to Right or Right to Left?) User: "BID volume on left". Bar usually aligns with volume? Let's put bar behind volume. */}
-                                                    {/* Actually, usually depth bars fill from the "middle" outwards or "side" inwards.
-                                                        Let's make the bar fill the whole cell background based on size proportional to max.
-                                                    */}
-                                                    <div className="absolute top-0 bottom-0 left-0 bg-green-900/20 transition-all duration-200" style={{ width: `${bidW}%` }}></div>
-                                                    
-                                                    <span className="z-10 w-12 pl-2 text-gray-400 text-[11px]">{bid.size}</span>
-                                                    <span className="z-10 flex-1 text-right pr-2 text-green-400 font-bold">{bid.price.toFixed(2)}</span>
-                                                </div>
-
-                                                {/* Ask Side */}
-                                                <div 
-                                                    className="flex-1 flex items-center relative cursor-pointer hover:bg-gray-800 overflow-hidden"
-                                                    onClick={() => setOrder(p => ({ ...p, price: ask.price.toFixed(2), type: 'LIMIT', side: 'SELL' }))}
-                                                >
-                                                    {/* Depth Bar */}
-                                                    <div className="absolute top-0 bottom-0 right-0 bg-red-900/20 transition-all duration-200" style={{ width: `${askW}%` }}></div>
-
-                                                    <span className="z-10 flex-1 text-left pl-2 text-red-400 font-bold">{ask.price.toFixed(2)}</span>
-                                                    <span className="z-10 w-12 text-right pr-2 text-gray-400 text-[11px]">{ask.size}</span>
-                                                </div>
-                                            </div>
-                                        );
-                                    })}
-                                </div>
-                                
-                                {/* Spread Info Footer (Optional, fits in the empty space if needed, or just keep it clean) */}
-                                <div className="py-1 bg-gray-900 border-t border-gray-800 text-center text-[10px] text-gray-500 font-mono">
-                                    Spread: {spread}
+                                <div className="flex-1 overflow-y-auto min-h-[100px]">
+                                    <table className="w-full text-left text-[11px]">
+                                        <thead className="text-gray-500 sticky top-0 bg-[#0b0e11]">
+                                            <tr><th className="pl-3 py-1">代碼</th><th className="text-right">數量</th><th className="text-right">成本</th><th className="text-right pr-3">未實現P/L</th></tr>
+                                        </thead>
+                                        <tbody className="font-mono-num divide-y divide-gray-800/50">
+                                            {pos.map(p => (
+                                                <tr key={p.code} className="hover:bg-gray-800/30 cursor-pointer" onClick={() => setSelCode(p.code)}>
+                                                    <td className="pl-3 py-1 text-gray-300 font-bold">{p.code}</td>
+                                                    <td className={`text-right ${p.qty>0?'text-green-400':'text-red-400'}`}>{p.qty}</td>
+                                                    <td className="text-right text-gray-500">{p.avg.toFixed(2)}</td>
+                                                    <td className={`text-right pr-3 ${col(p.upl)}`}>{p.upl.toFixed(2)}</td>
+                                                </tr>
+                                            ))}
+                                            {pos.length === 0 && <tr><td colSpan="5" className="text-center py-4 text-gray-600 italic">無持有部位</td></tr>}
+                                        </tbody>
+                                    </table>
                                 </div>
                             </div>
 
-                            {/* Order Entry Form (Optimized) */}
-                            <div className="p-3 bg-gray-900 shrink-0">
-                                <div className="flex justify-between mb-2 text-xs">
-                                    <span className="font-bold text-gray-300">下單面板</span>
-                                    {currentPos && <span className={currentPos.qty>0?'text-green-400':'text-red-400'}>{currentPos.qty} 股</span>}
+                            {/* Working Orders */}
+                            <div className="flex flex-col min-h-0 flex-1">
+                                <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2 shrink-0">
+                                    委託單 (Working Orders)
                                 </div>
-                                
-                                <form onSubmit={placeOrder} className="space-y-3">
-                                    {/* BUY/SELL Buttons (Large) */}
-                                    <div className="flex gap-1 p-1 bg-black rounded border border-gray-700">
-                                        <button type="button" onClick={()=>setOrder(p=>({...p, side:'BUY'}))} className={`flex-1 py-2 text-sm font-bold rounded shadow-md transition-colors ${order.side==='BUY'?'bg-green-600 text-white hover:bg-green-500':'text-gray-500 bg-gray-800 hover:text-gray-300'}`}>買入 (BUY)</button>
-                                        <button type="button" onClick={()=>setOrder(p=>({...p, side:'SELL'}))} className={`flex-1 py-2 text-sm font-bold rounded shadow-md transition-colors ${order.side==='SELL'?'bg-red-600 text-white hover:bg-red-500':'text-gray-500 bg-gray-800 hover:text-gray-300'}`}>賣出 (SELL)</button>
-                                    </div>
-
-                                    <div className="grid grid-cols-2 gap-2">
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] text-gray-500">數量 (Shares)</label>
-                                            <input type="number" value={order.qty} onChange={e=>setOrder(p=>({...p, qty:e.target.value}))} className="w-full bg-black border border-gray-700 rounded px-2 py-1.5 text-right text-white text-sm outline-none focus:border-blue-500 font-mono-num" />
-                                        </div>
-                                        <div className="space-y-1">
-                                            <label className="text-[10px] text-gray-500">價格 (Price)</label>
-                                            <input type="number" step="0.01" disabled={order.type==='MARKET'} value={order.price} onChange={e=>setOrder(p=>({...p, price:e.target.value}))} className="w-full bg-black border border-gray-700 rounded px-2 py-1.5 text-right text-white text-sm outline-none focus:border-blue-500 disabled:opacity-50 font-mono-num" placeholder={order.type==='MARKET'?'MKT':''} />
-                                        </div>
-                                    </div>
-                                    
-                                    {/* Estimated Value */}
-                                    <div className="text-center text-[11px] py-1 px-2 bg-gray-800 rounded border border-gray-700 font-mono-num text-gray-400">
-                                        預估價值: <span className="font-bold text-white">{fmtUSD(estimatedValue)}</span>
-                                    </div>
-
-                                    {/* Quick Size Buttons */}
-                                    <div className="flex gap-1">
-                                        {[0.25, 0.5, 1].map(pct => (
-                                            <button key={pct} type="button" onClick={()=>setQtyByPct(pct)} className="flex-1 bg-gray-800 hover:bg-gray-700 text-[10px] text-gray-400 rounded py-1 border border-gray-700 transition-colors">{pct*100}% 現金</button>
-                                        ))}
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        <select value={order.type} onChange={e=>setOrder(p=>({...p, type:e.target.value}))} className="flex-1 bg-gray-800 border border-gray-700 rounded text-xs text-white px-2 py-1.5 outline-none">
-                                            <option value="LIMIT">限價單 (LMT)</option>
-                                            <option value="MARKET">市價單 (MKT)</option>
-                                        </select>
-                                        <select value={order.tif} onChange={e=>setOrder(p=>({...p, tif:e.target.value}))} className="flex-1 bg-gray-800 border border-gray-700 rounded text-xs text-white px-2 py-1.5 outline-none">
-                                            <option value="DAY">當日有效 (DAY)</option>
-                                            <option value="IOC">立即或取消 (IOC)</option>
-                                            <option value="FOK">全部成交或取消 (FOK)</option>
-                                        </select>
-                                    </div>
-
-                                    <button type="submit" className={`w-full py-2.5 rounded font-bold text-sm text-white shadow-xl mt-2 transition-colors ${order.side==='BUY'?'bg-green-700 hover:bg-green-600':'bg-red-700 hover:bg-red-600'}`}>
-                                        確認 {order.side==='BUY'?'買入':'賣出'} 訂單
-                                    </button>
-                                </form>
+                                <div className="flex-1 overflow-y-auto min-h-[100px]">
+                                    <table className="w-full text-left text-[11px]">
+                                        <thead className="text-gray-500 sticky top-0 bg-[#0b0e11]">
+                                            <tr><th>方向</th><th>代碼</th><th className="text-right">價格</th><th className="text-right">數量</th><th className="text-center pr-2">取消</th></tr>
+                                        </thead>
+                                        <tbody className="font-mono-num divide-y divide-gray-800/50">
+                                            {activeOrders.map(o => (
+                                                <tr key={o.id} className="hover:bg-gray-800/30">
+                                                    <td className={`pl-3 py-1 ${o.side==='BUY'?'text-green-500':'text-red-500'}`}>{o.side==='BUY'?'買':'賣'}</td>
+                                                    <td className="text-gray-300">{o.code}</td>
+                                                    <td className="text-right text-gray-300">{o.price.toFixed(2)}</td>
+                                                    <td className="text-right text-gray-300">{o.qty}</td>
+                                                    <td className="text-center">
+                                                        <button onClick={() => cancelOrder(o.id)} className="text-red-500 hover:text-red-300 p-1 rounded transition-colors">
+                                                            <Icons.X size={12}/>
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                            {activeOrders.length === 0 && <tr><td colSpan="5" className="text-center py-4 text-gray-600 italic">無待處理委託單</td></tr>}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </div>
                         </div>
                     </div>
-
-                    {/* AI BTN & MODAL (Unchanged) */}
-                    <button onClick={()=>setAiOpen(true)} className="fixed bottom-4 right-4 p-3 bg-indigo-600 hover:bg-indigo-500 text-white rounded-full shadow-xl border border-indigo-400/30 z-50 transition-all hover:scale-105">
-                        <Icons.Sparkles/>
-                    </button>
-
-                    {aiOpen && (
-                        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100]">
-                            <div className="bg-gray-900 border border-gray-700 w-96 rounded-lg shadow-2xl overflow-hidden">
-                                <div className="bg-gray-800 p-3 flex justify-between items-center border-b border-gray-700">
-                                    <div className="flex items-center gap-2 text-white font-bold"><Icons.Sparkles className="text-indigo-400"/> 雙子座分析師</div>
-                                    <button onClick={()=>setAiOpen(false)} className="text-gray-500 hover:text-white"><Icons.X/></button>
-                                </div>
-                                <div className="p-4 h-64 overflow-y-auto text-sm text-gray-300">
-                                    <p className="mb-2">正在分析 <strong>{selStock.n} ({selStock.c})</strong>...</p>
-                                    <div className="p-3 bg-indigo-900/20 border border-indigo-500/30 rounded text-indigo-200 text-xs leading-relaxed">
-                                        MACD 指標目前處於 <span className="text-blue-400">零線上方</span> 且 <span className="text-orange-400">MACD 線剛向上穿越 Signal 線</span>，這在技術上發出了 **買入訊號**，表明短期動量強於長期動量。（模擬分析）
-                                    </div>
-                                </div>
-                                <div className="p-3 bg-gray-800 border-t border-gray-700">
-                                    <div className="relative">
-                                        <input type="text" className="w-full bg-gray-900 border border-gray-600 rounded pl-3 pr-8 py-2 text-xs text-white focus:border-indigo-500 outline-none" placeholder="詢問市場趨勢..." />
-                                        <Icons.Send size={14} className="absolute right-2 top-2.5 text-gray-500"/>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* TOAST */}
+                    
+                    {/* --- FOOTER: NOTIFICATIONS --- */}
                     {msg && (
-                        <div className={`fixed top-16 right-4 px-4 py-3 rounded bg-gray-800 border-l-4 shadow-2xl text-sm font-bold flex items-center gap-3 z-[100] ${msg.type==='error'?'border-red-500 text-red-400':(msg.type==='info'?'border-blue-500 text-blue-400':'border-green-500 text-green-400')}`}>
+                        <div className={`absolute bottom-4 right-4 p-3 rounded-lg shadow-2xl transition-all ${msg.type === 'error' ? 'bg-red-600' : msg.type === 'info' ? 'bg-blue-600' : 'bg-green-600'} text-white font-bold`}>
                             {msg.txt}
                         </div>
                     )}
@@ -1064,7 +796,9 @@
             );
         }
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
+        // --- RENDER APP ---
+        const container = document.getElementById('root');
+        const root = ReactDOM.createRoot(container);
         root.render(<App />);
     </script>
 </body>
