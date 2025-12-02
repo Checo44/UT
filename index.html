@@ -30,6 +30,19 @@
         .chart-container canvas {
             display: block;
         }
+
+        /* Table Cell Styling for volume bars */
+        /* IMPORTANT: Setting TD to relative and background div to absolute inside ensures the bar is behind the content */
+        .market-depth-table td {
+            padding: 0; /* Remove default padding for full background coverage */
+            height: 30px; /* Fixed height for rows */
+        }
+        .market-depth-table .relative-cell {
+            position: relative;
+            height: 100%;
+            display: flex;
+            align-items: center;
+        }
     </style>
 </head>
 <body class="text-gray-300 overflow-hidden selection:bg-blue-500/30 selection:text-blue-200">
@@ -63,7 +76,7 @@
         const INITIAL_CASH = 100000.00;
         const STATIC_PRICE = 100.00; // 價格固定為 100.00
         
-        // MLB 30 隊數據 (價格已全部重置為 100.00)
+        // MLB 30 隊數據
         const INITIAL_DATA = [
             { c:'ARI', n:'Arizona Diamondbacks (亞利桑那響尾蛇)', p:STATIC_PRICE },
             { c:'ATL', n:'Atlanta Braves (亞特蘭大勇士)', p:STATIC_PRICE },
@@ -164,110 +177,153 @@
         };
 
 
-        // 各隊委託狀態區 (Market Depth)
+        // Market Depth / 各隊委託狀態區 (New Component)
         const MarketDepth = ({ price }) => {
             // Static depth levels based around the price 100.00
-            const depthLevels = useMemo(() => {
+            const mockLevels = useMemo(() => {
                 const levels = [];
-                const baseVolume = 1000;
-                for (let i = 1; i <= 5; i++) {
-                    // Asks (賣價)
-                    levels.push({ 
-                        price: price + i * 0.05, 
-                        askQty: baseVolume + i * 50, 
-                        bidQty: 0,
-                        isAsk: true
-                    });
-                    // Bids (買價)
-                    levels.push({ 
-                        price: price - i * 0.05, 
-                        askQty: 0, 
-                        bidQty: baseVolume + (5 - i) * 100,
-                        isBid: true
+                const baseVolume = 1500;
+                
+                // 5 Bid levels (委買價 - Green/Inner Market)
+                for (let i = 0; i < 5; i++) {
+                    levels.push({
+                        price: price - 0.05 * (4 - i), // e.g., 99.80, 99.85, 99.90, 99.95, 100.00 (Note: price is 100.00 so highest bid is 99.95)
+                        qty: baseVolume + (i * 200) + (i % 2 === 0 ? 50 : -50),
+                        side: 'BID'
                     });
                 }
-                // Find max quantity for depth bar visualization
-                const allQtys = levels.map(l => l.askQty + l.bidQty);
-                const maxQty = Math.max(...allQtys);
+                // 5 Ask levels (委賣價 - Red/Outer Market)
+                for (let i = 0; i < 5; i++) {
+                    levels.push({
+                        price: price + 0.05 * (i + 1), // e.g., 100.05, 100.10, 100.15, 100.20, 100.25
+                        qty: baseVolume + (i * 150) + (i % 3 === 0 ? 100 : 0),
+                        side: 'ASK'
+                    });
+                }
 
-                // Separate and reverse for display order (Asks top-down, Bids top-down)
-                const asks = levels.filter(l => l.isAsk).sort((a, b) => b.price - a.price); // Highest ask first
-                const bids = levels.filter(l => l.isBid).sort((a, b) => b.price - a.price); // Highest bid first
-                
-                return { asks, bids, maxQty };
+                // Sort and pair for 5 symmetrical rows
+                const bids = levels.filter(l => l.side === 'BID').sort((a, b) => b.price - a.price); // Highest bid first
+                const asks = levels.filter(l => l.side === 'ASK').sort((a, b) => a.price - b.price); // Lowest ask first
+
+                // Align bids and asks for 5 rows
+                const rows = bids.map((bid, index) => ({
+                    bid: bid,
+                    ask: asks[index]
+                }));
+
+                const allQtys = levels.map(l => l.qty);
+                const maxQty = Math.max(...allQtys);
+                const totalBidQty = bids.reduce((sum, b) => sum + b.qty, 0);
+                const totalAskQty = asks.reduce((sum, a) => sum + a.qty, 0);
+
+                return { rows, maxQty, totalBidQty, totalAskQty };
             }, [price]);
 
-            const lowestAsk = depthLevels.asks[depthLevels.asks.length - 1]?.price || price;
-            const highestBid = depthLevels.bids[0]?.price || price;
-            const spread = lowestAsk - highestBid;
+            const { rows, maxQty, totalBidQty, totalAskQty } = mockLevels;
+            const totalVol = totalBidQty + totalAskQty;
+            const bidPct = totalVol > 0 ? (totalBidQty / totalVol) * 100 : 50;
+            const askPct = totalVol > 0 ? (totalAskQty / totalVol) * 100 : 50;
 
-            const renderLevel = (level, maxQty) => {
-                const isAsk = level.askQty > 0;
-                const qty = isAsk ? level.askQty : level.bidQty;
-                const color = isAsk ? 'bg-red-900/40' : 'bg-green-900/40';
-                const priceClass = isAsk ? 'text-red-400' : 'text-green-400';
-                const widthPct = (qty / maxQty) * 100;
-
-                return (
-                    <tr key={`${level.price}-${isAsk ? 'A' : 'B'}`} className="relative transition-colors text-xs font-mono-num">
-                        {/* Volume Bar Background (to simulate depth visualization) */}
-                        <td colSpan="4" className="absolute top-0 left-0 h-full overflow-hidden">
-                            <div className={`${color} h-full transition-all duration-300`} style={{ width: `${widthPct}%` }} />
-                        </td>
-                        
-                        {/* 賣單量 | 賣價 */}
-                        {isAsk ? (
-                            <>
-                                <td className="relative px-2 py-1 text-right text-gray-300">{qty.toLocaleString()}</td>
-                                <td className={`relative px-2 py-1 text-right font-bold ${priceClass}`}>{level.price.toFixed(2)}</td>
-                                <td className="relative px-2 py-1 text-right text-gray-500">-</td>
-                                <td className="relative px-2 py-1 text-right text-gray-500">-</td>
-                            </>
-                        ) : (
-                            <>
-                                <td className="relative px-2 py-1 text-right text-gray-500">-</td>
-                                <td className="relative px-2 py-1 text-right text-gray-500">-</td>
-                                <td className={`relative px-2 py-1 text-right font-bold ${priceClass}`}>{level.price.toFixed(2)}</td>
-                                <td className="relative px-2 py-1 text-right text-gray-300">{qty.toLocaleString()}</td>
-                            </>
-                        )}
-                    </tr>
-                );
-            };
 
             return (
-                <div className="flex flex-col p-4 bg-gray-950/50 flex-1 overflow-y-auto">
-                    <div className="text-center text-xs mb-2 p-1 border-b border-gray-800">
-                        <span className="text-gray-500">當前價差 (Spread): </span>
-                        <span className="font-mono-num text-yellow-400 font-bold ml-1">
-                            {spread.toFixed(2)}
-                        </span>
+                <div className="flex flex-col p-2 bg-gray-950/50 flex-1 overflow-y-auto">
+                    {/* Inner/Outer Market Header (內盤/外盤) */}
+                    <div className="flex flex-col mb-3 border-b border-gray-800 pb-2">
+                        <div className="flex justify-center text-xs font-bold font-sans">
+                            <span className="text-green-500 mr-2">
+                                內盤 <span className='font-mono-num'>{totalBidQty.toLocaleString()}</span>
+                                <span className="text-gray-400">({bidPct.toFixed(2)}%)</span>
+                            </span>
+                            <span className="text-red-500 ml-2">
+                                外盤 <span className='font-mono-num'>{totalAskQty.toLocaleString()}</span>
+                                <span className="text-gray-400">({askPct.toFixed(2)}%)</span>
+                            </span>
+                        </div>
+                        {/* Percentage Bar */}
+                        <div className="flex w-full h-2 mt-1 rounded overflow-hidden">
+                            <div className="bg-green-600 transition-all duration-300" style={{ width: `${bidPct}%` }}></div>
+                            <div className="bg-red-600 transition-all duration-300" style={{ width: `${askPct}%` }}></div>
+                        </div>
                     </div>
-                    <table className="w-full text-left text-[11px] border-collapse">
-                        <thead className="text-gray-500 sticky top-0 bg-gray-950/70 border-b border-gray-700">
-                            <tr>
-                                <th className="px-2 py-1 text-center bg-red-900/30">賣單量 (Ask Qty)</th>
-                                <th className="px-2 py-1 text-center bg-red-900/30">賣價 (Ask)</th>
-                                <th className="px-2 py-1 text-center bg-green-900/30">買價 (Bid)</th>
-                                <th className="px-2 py-1 text-center bg-green-900/30">買單量 (Bid Qty)</th>
-                            </tr>
-                        </thead>
-                        <tbody className="font-mono-num divide-y divide-gray-900">
-                            {/* Display Asks (Offers) */}
-                            {depthLevels.asks.map(l => renderLevel(l, depthLevels.maxQty))}
-                            
-                            {/* Center Price Marker */}
-                            <tr>
-                                <td colSpan="4" className="text-center py-1 bg-gray-800/80 border-y border-gray-700">
-                                    <span className="text-lg font-bold text-yellow-300">{price.toFixed(2)}</span>
-                                    <span className="text-xs text-gray-500 ml-1">(最後成交價)</span>
-                                </td>
-                            </tr>
-
-                            {/* Display Bids (Demands) */}
-                            {depthLevels.bids.map(l => renderLevel(l, depthLevels.maxQty))}
-                        </tbody>
-                    </table>
+                    
+                    {/* Order Book Table */}
+                    <div className="flex-1 min-h-0 overflow-hidden">
+                        <table className="w-full text-left text-[11px] border-collapse relative market-depth-table">
+                            <thead className="text-gray-500 sticky top-0 bg-gray-950/70 border-b border-gray-700">
+                                <tr>
+                                    <th className="text-right px-2 py-1">量</th>
+                                    <th className="text-right px-2 py-1">委買價</th>
+                                    <th className="text-left px-2 py-1">委賣價</th>
+                                    <th className="text-left px-2 py-1">量</th>
+                                </tr>
+                            </thead>
+                            <tbody className="font-mono-num divide-y divide-gray-900/50">
+                                {rows.map((r, index) => {
+                                    const bidWidthPct = (r.bid.qty / maxQty) * 100;
+                                    const askWidthPct = (r.ask.qty / maxQty) * 100;
+                                    
+                                    return (
+                                        <tr key={r.bid.price} className="h-[30px] transition-colors text-xs font-mono-num">
+                                            
+                                            {/* QTY (Bid) - Volume Bar is inside this cell, right aligned */}
+                                            <td className="relative w-1/4">
+                                                {/* Bid Bar Background (Right aligned, Green) */}
+                                                <div 
+                                                    className="absolute top-0 right-0 h-full bg-green-900/40 transition-all duration-300" 
+                                                    style={{ width: `${bidWidthPct}%` }}
+                                                />
+                                                <div className="relative-cell justify-end pr-2 text-green-300">
+                                                    <span className='z-10 relative'>{r.bid.qty.toLocaleString()}</span>
+                                                </div>
+                                            </td>
+                                            
+                                            {/* BID PRICE (委買價) */}
+                                            <td className="relative w-1/4">
+                                                <div className="relative-cell justify-end pr-2 text-green-400 font-bold">
+                                                    <span className='z-10 relative'>{r.bid.price.toFixed(2)}</span>
+                                                </div>
+                                            </td>
+                                            
+                                            {/* ASK PRICE (委賣價) - Volume Bar is inside this cell, left aligned */}
+                                            <td className="relative w-1/4">
+                                                {/* Ask Bar Background (Left aligned, Red) */}
+                                                <div 
+                                                    className="absolute top-0 left-0 h-full bg-red-900/40 transition-all duration-300" 
+                                                    style={{ width: `${askWidthPct}%` }}
+                                                />
+                                                <div className="relative-cell justify-start pl-2 text-red-400 font-bold">
+                                                    <span className='z-10 relative'>{r.ask.price.toFixed(2)}</span>
+                                                </div>
+                                            </td>
+                                            
+                                            {/* QTY (Ask) */}
+                                            <td className="relative w-1/4">
+                                                <div className="relative-cell justify-start pl-2 text-red-300">
+                                                    <span className='z-10 relative'>{r.ask.qty.toLocaleString()}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    )
+                                })}
+                            </tbody>
+                            <tfoot className="sticky bottom-0 bg-gray-950/90 border-t border-gray-700 font-bold text-gray-500 text-xs">
+                                <tr>
+                                    <td colSpan="2" className="text-center">
+                                        <div className="flex justify-between items-center py-1 border-r border-gray-700">
+                                            <span className="pl-2">小計</span>
+                                            <span className="font-mono-num pr-2 text-green-400">{totalBidQty.toLocaleString()}</span>
+                                        </div>
+                                    </td>
+                                    <td colSpan="2" className="text-center">
+                                        <div className="flex justify-between items-center py-1">
+                                            <span className="pl-2 font-mono-num text-red-400">{totalAskQty.toLocaleString()}</span>
+                                            <span className="pr-2">小計</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
                 </div>
             );
         };
@@ -649,7 +705,7 @@
                                 <KLineChart price={selStock.price} />
                             </div>
                             
-                            {/* Market Depth / 各隊委託狀態區 (New Component) */}
+                            {/* Market Depth / 各隊委託狀態區 */}
                             <div className="flex-1 flex flex-col min-h-0">
                                 <div className="px-3 py-1.5 bg-gray-800/50 text-[10px] font-bold text-gray-400 uppercase border-b border-gray-800 flex items-center gap-2 shrink-0">
                                     各隊委託狀態區 (Market Depth)
